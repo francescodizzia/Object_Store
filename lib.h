@@ -2,7 +2,7 @@
 #define false 0
 #define bool int
 
-#define SOCKNAME "fradiz"
+#define SOCKNAME "objstore.sock"
 #define MAX_CONN 50
 #define N 512
 #define BYTES_TO_READ 4

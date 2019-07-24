@@ -16,13 +16,13 @@
 
 #include "lib.h"
 
-
+#define _POSIX_C_SOURCE 200809L
 #define MAX_ACTION_LENGTH 9
 #define MAX_NAME_LENGTH 101
 
 static volatile sig_atomic_t running = true;
 static pthread_mutex_t mtx;
-static pthread_cond_t empty, update;
+static pthread_cond_t empty;
 
 static int n_clients = 0;
 
@@ -51,7 +51,7 @@ void toup(char *str) {
 
 void *threadF(void *arg) {
   long connfd = (long)arg;
-  int ret, sret;
+  int sret;
 
   fd_set readfds;
   struct timeval timeout;
@@ -70,7 +70,7 @@ void *threadF(void *arg) {
    timeout.tv_sec = 0;
    timeout.tv_usec = 100000;
 
-   sret = select(connfd+1,&readfds, NULL, NULL, &timeout);;
+   sret = select(connfd+1,&readfds, NULL, NULL, &timeout);
 
    if(sret == 0){
   /*   printf("sret = %d\n", sret);
@@ -152,13 +152,11 @@ int main(){
  bind(fd, (struct sockaddr *)&sa, sizeof(sa));
  listen(fd, MAX_CONN);
 
- int ret, sret,connfd;
+ int sret,connfd;
 
  fd_set readfds;
  struct timeval timeout;
 
-
- bool update_clients = false;
  int clients = n_clients;
 
  while(running){
@@ -190,7 +188,6 @@ int main(){
 
       connfd = accept(fd, (struct sockaddr*)NULL ,NULL);
       spawn_thread(connfd);
-      update_clients = true;
     }
 
 
@@ -206,8 +203,11 @@ while(n_clients > 0){
 
 
   pthread_mutex_lock(&mtx);
-  if(n_clients > 0)
+  if(n_clients > 0){
+   printf("[X] WAITING FOR CLIENTS\n");
    pthread_cond_wait(&empty, &mtx);
+   printf("[+] DONE\n");
+  }
   pthread_mutex_unlock(&mtx);
 
 
