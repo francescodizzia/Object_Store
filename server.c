@@ -14,22 +14,21 @@
 #include <ctype.h>
 #include <fcntl.h>
 
-#include "lib.h"
+#include <lib.h>
 
 #define _POSIX_C_SOURCE 200809L
 #define MAX_ACTION_LENGTH 9
 #define MAX_NAME_LENGTH 101
+
+
+#define SYSCALL(r,c,e) \
+    if((r=c)==-1) { perror(e);printf(" errore:%d\n",errno); exit(1);}
 
 static volatile sig_atomic_t running = true;
 static pthread_mutex_t mtx;
 static pthread_cond_t empty;
 
 static int n_clients = 0;
-
-typedef struct msg {
-    int len;
-    char *str;
-} msg_t;
 
 
 void cleanup() {
@@ -49,9 +48,42 @@ void toup(char *str) {
     }
 }
 
+void parse_request(int fd, char *str){
+ if(str == NULL)return;
+
+ char action[9];
+ char name[128];
+ char data[256];
+ int len;
+ int u;
+
+ sscanf(str, "%s %s %d \n %s", action, name, &len,data);
+ printf("ACTION: %s   NAME: %s LEN: %d\n", action, name, len);
+  if(data == NULL)printf("non e' una store\n");
+
+ if(str_equals(action,"STORE")){
+  char* buf = calloc(len+1, sizeof(char));
+  SYSCALL(u,readn(fd, buf, len),"read_store");
+
+  //gestire caso in cui il client si e' disconnesso
+  //prima di finire la seconda READ!
+
+  buf[len] = '\0';
+  //readn(fd, &len, sizeof(int));
+  printf("data: %s\n", buf);
+  toup(buf);
+  SYSCALL(u,writen(fd,buf,len),"write_store");
+
+  free(buf);
+ }
+
+
+}
+
 void *threadF(void *arg) {
   long connfd = (long)arg;
   int sret;
+  char header[MAX_HEADER_SIZE];
 
   fd_set readfds;
   struct timeval timeout;
@@ -61,8 +93,6 @@ void *threadF(void *arg) {
   pthread_mutex_unlock(&mtx);
 
   while(running){
-	 msg_t str;
-   int n;
 
    FD_ZERO(&readfds);
    FD_SET(connfd, &readfds);
@@ -77,25 +107,15 @@ void *threadF(void *arg) {
      printf(" timeout\n")*/;
    }
    else{
+   int u;
+   SYSCALL(u,readn(connfd, header, MAX_HEADER_SIZE),"read_x");
+   if(u == 0)break;
 
-   n = readn(connfd, &str.len, sizeof(int));
+  //FAI COSE COL DATO RICEVUTO
+	//toup(header);
+  parse_request(connfd, header);
 
-	 if(n==0) break;
-	 str.str = calloc((str.len), sizeof(char));
-
-   if(!str.str) {
-	    perror("calloc");
-	    fprintf(stderr, "Memoria esaurita....\n");
-	    break;
-	 }
-	n = readn(connfd, str.str, str.len * sizeof(char));
-
-	toup(str.str);
-
-
-	n = writen(connfd, &str.len, sizeof(int));
-	n = writen(connfd, str.str, str.len*sizeof(char));
-	free(str.str);
+	//writen(connfd, header, MAX_HEADER_SIZE);
   }
 }
   close(connfd);
@@ -103,7 +123,8 @@ void *threadF(void *arg) {
   pthread_mutex_lock(&mtx);
   n_clients--;
   if(n_clients <= 0)
-  pthread_cond_signal(&empty);
+    pthread_cond_signal(&empty);
+
   pthread_mutex_unlock(&mtx);
 
   return NULL;
@@ -201,10 +222,9 @@ while(n_clients > 0){
 }
 */
 
-
   pthread_mutex_lock(&mtx);
   if(n_clients > 0){
-   printf("[X] WAITING FOR CLIENTS\n");
+   printf("[X] WAITING FOR THE THREADS\n");
    pthread_cond_wait(&empty, &mtx);
    printf("[+] DONE\n");
   }

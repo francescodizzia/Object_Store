@@ -1,7 +1,9 @@
-CFLAGS = -std=c99 -g -Wall -pedantic
-SOCKNAME = fradiz
-VALGRIND_FLAGS = --leak-check=full
-LIBS = -lpthread
+CC = gcc
+CFLAGS = -std=c99 -g -Wall -pedantic -L. -I.
+SOCKNAME = objstore.sock
+VALGRIND_FLAGS = --leak-check=full #-v
+
+all: server client
 
 dserver: server
 	valgrind $(VALGRIND_FLAGS) ./server
@@ -15,13 +17,19 @@ rclient: client
 rserver: server
 	@./server
 
-client: client.o
-	$(CC) client.o -o client $(LIBS)
+server: server.c libplug.a
+	$(CC) $(CFLAGS) $< -o $@ -lplug -lpthread
 
-server: server.o
-	$(CC) server.o -o server $(LIBS)
+client: client.c libplug.a
+	$(CC) $(CFLAGS) $< -o $@ -lplug
+
+libplug.a: lib.o
+	ar rvs $@ $<
+
+%.o: %.c %.h
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	$(RM) ./*.o ./*.out ./server ./client ./$(SOCKNAME)
+	$(RM) ./*.o ./*.out ./server ./client ./$(SOCKNAME) ./*.a
 	clear
-.PHONY: client server rclient rserver clean dclient
+.PHONY: rclient rserver clean dclient dserver all

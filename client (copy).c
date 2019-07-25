@@ -20,25 +20,14 @@ void sigIntHandler(){
 }
 
 
-
-int main(int argc,char* argv[]){
- char nome[10];
- char buf[MAX_HEADER_SIZE];
- memset(buf, '\0', MAX_HEADER_SIZE);
- memset(nome, '\0', 10);
-
-  if(argv[1] != NULL)
-    strcpy(nome,argv[1]);
-
-  if(argv[2] != NULL)
-    strcpy(buf,argv[2]);
-
+int main(){
 
   signal(SIGPIPE, SIG_IGN);
   signal(SIGINT, sigIntHandler);
 
   struct sockaddr_un serv_addr;
 
+  char buf[MAX_HEADER_SIZE];
   int c;
 
   fd = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -57,18 +46,15 @@ int main(int argc,char* argv[]){
 
 
   while(!terminate){
-    //memset(buf, '\0', MAX_HEADER_SIZE);
-   //if(argv[2] == NULL)
-    //fgets(buf, MAX_HEADER_SIZE, stdin);
+    memset(buf, '\0', MAX_HEADER_SIZE);
+    fgets(buf, MAX_HEADER_SIZE, stdin);
 
-    os_store(nome,buf, strlen(buf));
-    readn(fd,buf,strlen(buf));
-    printf("[x] ho ricevuto: %s\n",buf);
+    os_store("francesco",buf, strlen(buf));
 
-    //if(str_equals(buf, "quit"))
+
+    if(str_equals(buf, "quit"))
      terminate = true;
   }
-
 
   close(fd);
 
