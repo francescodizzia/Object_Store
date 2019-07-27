@@ -93,13 +93,23 @@ void parse_request(int c_fd, char *str){
   DEBUG_CMD(printf("REGISTER\n"));
 
   chdir("./users/");
-  mkdir(name,  0755);
+  int result = mkdir(name,  0755);
 
+ if(result == 0){ //SUCCESSO
   writen(c_fd,"OK \n",MAX_RESPONSE_SIZE);
   printf("Invio OK\n");
-printf("[%ld] *fine richiesta*\n\n",c_fd);
+ }
+ else{
+   printf("Invio FALLIMENTO\n");
+   char fail_buf[MAX_RESPONSE_SIZE];
+   memset(fail_buf,'\0',MAX_RESPONSE_SIZE);
+
+   sprintf(fail_buf,"KO %d \n", errno);
+   writen(c_fd,fail_buf,MAX_RESPONSE_SIZE);
 
  }
+ printf("[%ld] *fine richiesta*\n\n",c_fd);
+}
 
 }
 
