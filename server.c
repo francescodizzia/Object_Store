@@ -63,19 +63,6 @@ void parse_request(int c_fd, char *str){
  int u;
  char *ptr = NULL;
  int len = -1;
- /*
- char action[9];
- char name[128];
- char data[256];
-
-
-
- memset(action, '\0', 9);
- memset(name, '\0', 128);
- memset(data, '\0', 256);
-
- sscanf(str, "%s %s %d \n %s", action, name, &len,data);
-*/
 
  char *action = strtok_r(str, " ", &ptr);
  char *name = strtok_r(NULL, " ", &ptr);
@@ -102,9 +89,16 @@ void parse_request(int c_fd, char *str){
  }
  else
 */
-  if(str_equals(action,"REGISTER")){
+  if(str_equals(action,"REGISTER") && name != NULL){
   DEBUG_CMD(printf("REGISTER\n"));
-//  writen(c_fd,"OK \n",MAX_RESPONSE_SIZE);
+
+  chdir("./users/");
+  mkdir(name,  0755);
+
+  writen(c_fd,"OK \n",MAX_RESPONSE_SIZE);
+  printf("Invio OK\n");
+printf("[%ld] *fine richiesta*\n\n",c_fd);
+
  }
 
 }
@@ -156,17 +150,21 @@ break;}
    strcat(finalheader,header);
 
 
-  if(header[u-1] == '\0'){
-      parse_request(connfd, header);
 
+  if(header[u-1] == '\0'){
+      parse_request(connfd, finalheader);
+/*
       writen(connfd,"OK \n",MAX_RESPONSE_SIZE);
       printf("Invio OK\n");
   printf("[%ld] *fine richiesta*\n\n",connfd);
-
+*/
+  /*
   chdir("./users/");
   mkdir(finalheader,  0755);
+  */
   memset(finalheader,'\0',512);
   }
+
 //  pthread_mutex_unlock(&printThread);
 
 	//writen(connfd, header, MAX_HEADER_SIZE);
