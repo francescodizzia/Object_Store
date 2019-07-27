@@ -47,8 +47,8 @@ int main(int argc,char* argv[]){
  char buf[MAX_HEADER_SIZE];
  memset(buf, '\0', MAX_HEADER_SIZE);
 
- char nome[33];
- memset(nome, '\0', 33);
+ char nome[34];
+ memset(nome, '\0', 34);
 
  strcpy(nome,argv[1]);
  strcpy(buf,argv[2]);
