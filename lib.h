@@ -17,6 +17,8 @@ extern int fd;
 
 #define MAX_RESPONSE_SIZE 64
 
+extern pthread_mutex_t printThread;
+extern pthread_cond_t awaken;
 
 #define ASSERT_NULL(a,e){\
   if(a == NULL){\

@@ -18,6 +18,9 @@
 
 int fd = -1;
 
+pthread_mutex_t printThread = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t awaken;
+
 int os_store(char *name, void *block, size_t len) {
 	char *buff = calloc(BUFFSIZE, sizeof(char));
 
@@ -55,7 +58,7 @@ int os_connect(char *name) {
 
   sprintf(buff,"REGISTER %s \n",name);
 
-	write(fd, buff, current_chunk);
+	writen(fd, buff, current_chunk);
   free(buff);
 
 	return true;

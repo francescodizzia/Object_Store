@@ -1,11 +1,17 @@
 #!/bin/bash
 
 
-for i in {1..5}
+for i in {1..1}
 do
 #  ./client "user_${i}" "msg_${i}" "store" &
-  ./client "${i}rancescoDizzia" "msg_${i}_reg" "register" &
+  ./client "FrancescoDizzia" "msg_i_reg" "register" &
+    ./client "StefanoRusso" "msg_i_reg" "register" &
+#      ./client "GiovanniAlbertoAmato" "msg_i_reg" "register" &
+#        ./client "GianalbertoDiMartino" "msg_i_reg" "register" &
+#                ./client "Abcd" "msg_i_reg" "register" &
+
 done
+
 
 wait
 echo "Done"

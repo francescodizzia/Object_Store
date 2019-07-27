@@ -10,6 +10,7 @@
 #include <string.h>
 #include <signal.h>
 #include <sys/select.h>
+#include <sys/stat.h>
 #include <pthread.h>
 #include <ctype.h>
 #include <fcntl.h>
@@ -84,7 +85,9 @@ void parse_request(int c_fd, char *str){
 //len = (int) atol(len_s);
  //DEBUG_CMD(printf("ACTION: %s   NAME: %s LEN: %d\n", action, name, len));
  //printf("User: _%s_  s: %d\n",name,len);
+ if(action == NULL)return ;
 
+/*
  if(str_equals(action,"STORE")){
   DEBUG_CMD(printf("STORE\n"));
   char* buf = calloc(len+1, sizeof(char));
@@ -97,57 +100,77 @@ void parse_request(int c_fd, char *str){
   SYSCALL(u,writen(c_fd,buf,len),"write_store");
   free(buf);
  }
- else if(str_equals(action,"REGISTER")){
+ else
+*/
+  if(str_equals(action,"REGISTER")){
   DEBUG_CMD(printf("REGISTER\n"));
-  write(c_fd,"OK \n",MAX_RESPONSE_SIZE);
+//  writen(c_fd,"OK \n",MAX_RESPONSE_SIZE);
  }
 
 }
 
 void *threadF(void *arg) {
   long connfd = (long)arg;
-  int sret;
+
   char header[MAX_HEADER_SIZE*2];
    memset(header, '\0', MAX_HEADER_SIZE*2);
 
-  fd_set readfds;
-  struct timeval timeout;
+  char finalheader[512];
+  memset(finalheader, '\0', 512);
+
 
   pthread_mutex_lock(&mtx);
   n_clients++;
   pthread_mutex_unlock(&mtx);
 
   while(running){
-
+/*
    FD_ZERO(&readfds);
    FD_SET(connfd, &readfds);
 
    timeout.tv_sec = 0;
-   timeout.tv_usec = 100000;
+   timeout.tv_usec = 500000;
 
-   sret = select(connfd+1,&readfds, NULL, NULL, &timeout);
+   sret = select(connfd+1,&readfds, NULL, NULL, NULL);
 
    if(sret == 0){
-  /*   printf("sret = %d\n", sret);
-     printf(" timeout\n")*/
+     printf("sret = %d\n", sret);
+     printf(" timeout\n")
      ;
    }
    else{
+     */
    int u=0;
-   //SYSCALL(u,readn(connfd, header, 16),"read_x");
 
+
+  // pthread_cond_wait(&awaken,&printThread);
     SYSCALL(u,readn(connfd, header, DEFAULT_CHUNK_SIZE),"read_x");
 
-   if(u == 0)break;
+   if(u == 0){  //pthread_mutex_unlock(&printThread);
+break;}
 
-   printf("%s",header);
+   printf("\n[%ld]%s",connfd, header);
 
   //FAI COSE COL DATO RICEVUTO
 	//toup(header);
-  parse_request(connfd, header);
+//  strcat(finalheader,header);
+
+  writen(connfd,"OK \n",MAX_RESPONSE_SIZE);
+  printf("Invio OK\n");
+  if(header[u-1] == '\0'){
+      parse_request(connfd, header);
+  printf("[%ld] *fine richiesta*\n\n",connfd);
+
+  //char path[255];
+  //memset(path,'\0',255);
+  //sscanf(path,"home/francesco/Desktop/Act 0/users/%s", header);
+  chdir("./users/");
+  mkdir(header,  0755);
+  }
+//  pthread_mutex_unlock(&printThread);
 
 	//writen(connfd, header, MAX_HEADER_SIZE);
-  }
+//  }
 }
   close(connfd);
 
