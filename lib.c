@@ -29,18 +29,37 @@ int os_store(char *name, void *block, size_t len) {
 
 	return true;
 }
-
+/*
 int os_connect(char *name) {
 	char *buff = calloc(BUFFSIZE, sizeof(char));
 
-  sprintf(buff,"REGISTER  %s \n ",name);
+  sprintf(buff,"REGISTER %s \n ",name);
 
 	writen(fd, buff, BUFFSIZE);
   free(buff);
 
 	return true;
 }
+*/
+//13+len
+int os_connect(char *name) {
+	int len = strlen(name);
+	int current_chunk = DEFAULT_CHUNK_SIZE;
 
+  while(current_chunk < len+12)
+	  current_chunk = current_chunk * 2;
+
+		printf("name: %s | strlen: %d | chunk: %d\n",name ,len ,current_chunk);
+
+	char *buff = calloc(current_chunk, sizeof(char));
+
+  sprintf(buff,"REGISTER %s \n",name);
+
+	write(fd, buff, current_chunk);
+  free(buff);
+
+	return true;
+}
 
 bool str_equals(char* a, char* b){
  ASSERT_NULL(a,"a is NULL");

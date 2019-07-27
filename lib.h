@@ -10,11 +10,12 @@ extern int fd;
 
 #define SOCKNAME "objstore.sock"
 #define MAX_CONN 256
-//#define N 512
-#define MAX_HEADER_SIZE 512
-#define BUFFSIZE 512
 
-#define MAX_RESPONSE_SIZE 128
+#define DEFAULT_CHUNK_SIZE 16
+#define MAX_HEADER_SIZE 16
+#define BUFFSIZE 16
+
+#define MAX_RESPONSE_SIZE 64
 
 
 #define ASSERT_NULL(a,e){\

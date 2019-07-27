@@ -44,14 +44,8 @@ int main(int argc,char* argv[]){
    return -1;
  }
 
- char buf[MAX_HEADER_SIZE];
- memset(buf, '\0', MAX_HEADER_SIZE);
-
- char nome[34];
- memset(nome, '\0', 34);
-
- strcpy(nome,argv[1]);
- strcpy(buf,argv[2]);
+ char response_buf[MAX_RESPONSE_SIZE];
+ memset(response_buf, '\0', MAX_RESPONSE_SIZE);
 
 
   while(!terminate){
@@ -59,19 +53,20 @@ int main(int argc,char* argv[]){
    //if(argv[2] == NULL)
     //fgets(buf, MAX_HEADER_SIZE, stdin);
 
-   if(str_equals(argv[3],"store")){
+  /* if(str_equals(argv[3],"store")){
     os_store(nome,buf, strlen(buf));
     readn(fd,buf,strlen(buf));
    }
-   else if(str_equals(argv[3],"register")){
-    os_connect(nome);
-    memset(buf, '\0', MAX_HEADER_SIZE);
-    readn(fd,buf,4);
+   else */
+   if(str_equals(argv[3],"register")){
+    os_connect(argv[1]);
+    //memset(buf, '\0', MAX_HEADER_SIZE);
+    readn(fd,response_buf,MAX_RESPONSE_SIZE);
    }
 
   pid_t pid = getpid();
 
-  printf("[pid: %d] ho ricevuto: %s\n",(int) pid,buf);
+  printf("[pid: %d] ho ricevuto: %s\n",(int) pid,response_buf);
 
     //if(str_equals(buf, "quit"))
      terminate = true;

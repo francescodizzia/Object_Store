@@ -59,19 +59,31 @@ void toup(char *str) {
 void parse_request(int c_fd, char *str){
  if(str == NULL)return;
 
+ int u;
+ char *ptr = NULL;
+ int len = -1;
+ /*
  char action[9];
  char name[128];
  char data[256];
- int len = -1;
- int u;
+
+
 
  memset(action, '\0', 9);
  memset(name, '\0', 128);
  memset(data, '\0', 256);
 
  sscanf(str, "%s %s %d \n %s", action, name, &len,data);
- DEBUG_CMD(printf("ACTION: %s   NAME: %s LEN: %d\n", action, name, len));
- printf("User: %s\n",name);
+*/
+
+ char *action = strtok_r(str, " ", &ptr);
+ char *name = strtok_r(NULL, " ", &ptr);
+ //char* len_s = strtok_r(NULL, " ", &ptr);
+// size_t len = strtok_r(NULL, " ", &ptr);
+//size_t len = atol(lenstr);
+//len = (int) atol(len_s);
+ //DEBUG_CMD(printf("ACTION: %s   NAME: %s LEN: %d\n", action, name, len));
+ //printf("User: _%s_  s: %d\n",name,len);
 
  if(str_equals(action,"STORE")){
   DEBUG_CMD(printf("STORE\n"));
@@ -87,7 +99,7 @@ void parse_request(int c_fd, char *str){
  }
  else if(str_equals(action,"REGISTER")){
   DEBUG_CMD(printf("REGISTER\n"));
-  write(c_fd,"OK \n",4);
+  write(c_fd,"OK \n",MAX_RESPONSE_SIZE);
  }
 
 }
@@ -95,8 +107,8 @@ void parse_request(int c_fd, char *str){
 void *threadF(void *arg) {
   long connfd = (long)arg;
   int sret;
-  char header[MAX_HEADER_SIZE];
-   memset(header, '\0', MAX_HEADER_SIZE);
+  char header[MAX_HEADER_SIZE*2];
+   memset(header, '\0', MAX_HEADER_SIZE*2);
 
   fd_set readfds;
   struct timeval timeout;
@@ -121,9 +133,14 @@ void *threadF(void *arg) {
      ;
    }
    else{
-   int u;
-   SYSCALL(u,readn(connfd, header, MAX_HEADER_SIZE),"read_x");
+   int u=0;
+   //SYSCALL(u,readn(connfd, header, 16),"read_x");
+
+    SYSCALL(u,readn(connfd, header, DEFAULT_CHUNK_SIZE),"read_x");
+
    if(u == 0)break;
+
+   printf("%s",header);
 
   //FAI COSE COL DATO RICEVUTO
 	//toup(header);
