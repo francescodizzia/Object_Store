@@ -49,7 +49,7 @@ int main(int argc,char* argv[]){
  memset(response_buf, '\0', MAX_RESPONSE_SIZE);
 
 
-  while(!terminate){
+  //while(!terminate){
     //memset(buf, '\0', MAX_HEADER_SIZE);
    //if(argv[2] == NULL)
     //fgets(buf, MAX_HEADER_SIZE, stdin);
@@ -70,8 +70,8 @@ int main(int argc,char* argv[]){
   printf("[pid: %d] ho ricevuto: %s\n",(int) pid,response_buf);
 
     //if(str_equals(buf, "quit"))
-     terminate = true;
-  }
+    // terminate = true;
+//  }
 
 
   close(fd);

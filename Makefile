@@ -31,5 +31,6 @@ libplug.a: lib.o
 
 clean:
 	$(RM) ./*.o ./*.out ./server ./client ./$(SOCKNAME) ./*.a
+	$(RM) -r ./users/*
 	clear
 .PHONY: rclient rserver clean dclient dserver all

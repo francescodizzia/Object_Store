@@ -153,19 +153,19 @@ break;}
 
   //FAI COSE COL DATO RICEVUTO
 	//toup(header);
-//  strcat(finalheader,header);
+   strcat(finalheader,header);
 
-  writen(connfd,"OK \n",MAX_RESPONSE_SIZE);
-  printf("Invio OK\n");
+
   if(header[u-1] == '\0'){
       parse_request(connfd, header);
+
+      writen(connfd,"OK \n",MAX_RESPONSE_SIZE);
+      printf("Invio OK\n");
   printf("[%ld] *fine richiesta*\n\n",connfd);
 
-  //char path[255];
-  //memset(path,'\0',255);
-  //sscanf(path,"home/francesco/Desktop/Act 0/users/%s", header);
   chdir("./users/");
-  mkdir(header,  0755);
+  mkdir(finalheader,  0755);
+  memset(finalheader,'\0',512);
   }
 //  pthread_mutex_unlock(&printThread);
 
