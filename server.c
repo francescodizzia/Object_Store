@@ -92,7 +92,7 @@ void parse_request(int c_fd, char *str){
   if(str_equals(action,"REGISTER") && name != NULL){
   DEBUG_CMD(printf("REGISTER\n"));
 
-  chdir("./users/");
+  chdir(DATA_DIRECTORY);
   int result = mkdir(name,  0755);
 
  if(result == 0){ //SUCCESSO

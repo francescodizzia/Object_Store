@@ -3,7 +3,10 @@ CFLAGS = -std=c99 -D_POSIX_C_SOURCE=200809L -g -Wall -pedantic -L. -I. #-fsaniti
 SOCKNAME = objstore.sock
 VALGRIND_FLAGS = --leak-check=full #-v
 
-all: clean server client
+all: clean dir server client
+
+dir :
+	mkdir data
 
 dserver: server
 	valgrind $(VALGRIND_FLAGS) ./server
@@ -31,6 +34,6 @@ libplug.a: lib.o
 
 clean:
 	$(RM) ./*.o ./*.out ./server ./client ./$(SOCKNAME) ./*.a
-	$(RM) -r ./users/*
+	$(RM) -r ./data/* ./data
 	clear
 .PHONY: rclient rserver clean dclient dserver all

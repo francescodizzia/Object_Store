@@ -11,6 +11,8 @@ extern int fd;
 #define SOCKNAME "objstore.sock"
 #define MAX_CONN 256
 
+#define DATA_DIRECTORY "./data/"
+
 #define DEFAULT_CHUNK_SIZE 16
 #define MAX_HEADER_SIZE 16
 #define BUFFSIZE 16
