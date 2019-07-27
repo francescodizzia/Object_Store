@@ -1,9 +1,9 @@
 CC = gcc
-CFLAGS = -std=c99 -g -Wall -pedantic -L. -I.
+CFLAGS = -std=c99 -g -Wall -pedantic -L. -I. -fsanitize=address
 SOCKNAME = objstore.sock
 VALGRIND_FLAGS = --leak-check=full #-v
 
-all: clean server client dserver
+all: clean server client
 
 dserver: server
 	valgrind $(VALGRIND_FLAGS) ./server

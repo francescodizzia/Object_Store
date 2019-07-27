@@ -87,8 +87,7 @@ void parse_request(int c_fd, char *str){
  }
  else if(str_equals(action,"REGISTER")){
   DEBUG_CMD(printf("REGISTER\n"));
-  writen(c_fd,OK_RESPONSE,10);
-
+  write(c_fd,"OK \n",4);
  }
 
 }
@@ -97,6 +96,7 @@ void *threadF(void *arg) {
   long connfd = (long)arg;
   int sret;
   char header[MAX_HEADER_SIZE];
+   memset(header, '\0', MAX_HEADER_SIZE);
 
   fd_set readfds;
   struct timeval timeout;

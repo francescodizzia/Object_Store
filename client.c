@@ -47,8 +47,8 @@ int main(int argc,char* argv[]){
  char buf[MAX_HEADER_SIZE];
  memset(buf, '\0', MAX_HEADER_SIZE);
 
- char nome[11];
- memset(nome, '\0', 11);
+ char nome[33];
+ memset(nome, '\0', 33);
 
  strcpy(nome,argv[1]);
  strcpy(buf,argv[2]);
@@ -66,7 +66,7 @@ int main(int argc,char* argv[]){
    else if(str_equals(argv[3],"register")){
     os_connect(nome);
     memset(buf, '\0', MAX_HEADER_SIZE);
-    readn(fd,buf,10);
+    readn(fd,buf,4);
    }
 
   pid_t pid = getpid();
