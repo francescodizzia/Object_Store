@@ -20,9 +20,17 @@
 #define MAX_ACTION_LENGTH 9
 #define MAX_NAME_LENGTH 101
 
+#define DEBUG_ENABLED 0
+
+char* OK_RESPONSE = "OK \n";
+
+
 
 #define SYSCALL(r,c,e) \
     if((r=c)==-1) { perror(e);printf(" errore:%d\n",errno); exit(1);}
+
+#define DEBUG_CMD(c) \
+  if(DEBUG_ENABLED) {c;}
 
 static volatile sig_atomic_t running = true;
 static pthread_mutex_t mtx;
@@ -44,39 +52,44 @@ void toup(char *str) {
     char *p = str;
     while(*p != '\0') {
         *p = (islower(*p)?toupper(*p):*p);
-	++p;
+	      ++p;
     }
 }
 
-void parse_request(int fd, char *str){
+void parse_request(int c_fd, char *str){
  if(str == NULL)return;
 
  char action[9];
  char name[128];
  char data[256];
- int len;
+ int len = -1;
  int u;
 
+ memset(action, '\0', 9);
+ memset(name, '\0', 128);
+ memset(data, '\0', 256);
+
  sscanf(str, "%s %s %d \n %s", action, name, &len,data);
- printf("ACTION: %s   NAME: %s LEN: %d\n", action, name, len);
-  if(data == NULL)printf("non e' una store\n");
+ DEBUG_CMD(printf("ACTION: %s   NAME: %s LEN: %d\n", action, name, len));
+ printf("User: %s\n",name);
 
  if(str_equals(action,"STORE")){
+  DEBUG_CMD(printf("STORE\n"));
   char* buf = calloc(len+1, sizeof(char));
-  SYSCALL(u,readn(fd, buf, len),"read_store");
-
-  //gestire caso in cui il client si e' disconnesso
-  //prima di finire la seconda READ!
+  SYSCALL(u,readn(c_fd, buf, len),"read_store");
 
   buf[len] = '\0';
-  //readn(fd, &len, sizeof(int));
-  printf("data: %s\n", buf);
-  toup(buf);
-  SYSCALL(u,writen(fd,buf,len),"write_store");
 
+  DEBUG_CMD(printf("data: %s\n", buf));
+  toup(buf);
+  SYSCALL(u,writen(c_fd,buf,len),"write_store");
   free(buf);
  }
+ else if(str_equals(action,"REGISTER")){
+  DEBUG_CMD(printf("REGISTER\n"));
+  writen(c_fd,OK_RESPONSE,10);
 
+ }
 
 }
 
@@ -104,7 +117,8 @@ void *threadF(void *arg) {
 
    if(sret == 0){
   /*   printf("sret = %d\n", sret);
-     printf(" timeout\n")*/;
+     printf(" timeout\n")*/
+     ;
    }
    else{
    int u;
@@ -184,7 +198,7 @@ int main(){
 
    pthread_mutex_lock(&mtx);
     if(clients != n_clients)
-     printf("%d\n",n_clients);
+     DEBUG_CMD(printf("%d\n",n_clients));
    clients = n_clients;
    pthread_mutex_unlock(&mtx);
 
@@ -216,12 +230,6 @@ int main(){
 }
 
 
-/*
-while(n_clients > 0){
-  ; // BUSY WAITING! MALE
-}
-*/
-
   pthread_mutex_lock(&mtx);
   if(n_clients > 0){
    printf("[X] WAITING FOR THE THREADS\n");
@@ -231,11 +239,11 @@ while(n_clients > 0){
   pthread_mutex_unlock(&mtx);
 
 
-printf("[+] Tutti i thread sono stati terminati con successo!\n");
+ printf("[+] Tutti i thread sono stati terminati con successo!\n");
 
  //close(conn_fd);
-close(fd);
+ close(fd);
 
 
-return 0;
+ return 0;
 }

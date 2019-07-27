@@ -21,11 +21,22 @@ int fd = -1;
 int os_store(char *name, void *block, size_t len) {
 	char *buff = calloc(BUFFSIZE, sizeof(char));
 
-        sprintf(buff,"STORE %s %lu \n ",name, len);
+  sprintf(buff,"STORE %s %lu \n ",name, len);
 
-	write(fd, buff, BUFFSIZE);
-	write(fd, block, len);
-        free(buff);
+	writen(fd, buff, BUFFSIZE);
+	writen(fd, block, len);
+  free(buff);
+
+	return true;
+}
+
+int os_connect(char *name) {
+	char *buff = calloc(BUFFSIZE, sizeof(char));
+
+  sprintf(buff,"REGISTER  %s \n ",name);
+
+	writen(fd, buff, BUFFSIZE);
+  free(buff);
 
 	return true;
 }

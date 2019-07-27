@@ -10,10 +10,12 @@ extern int fd;
 
 #define SOCKNAME "objstore.sock"
 #define MAX_CONN 1000
-#define N 512
-#define BYTES_TO_READ 4
+//#define N 512
 #define MAX_HEADER_SIZE 512
 #define BUFFSIZE 512
+
+#define MAX_RESPONSE_SIZE 128
+
 
 #define ASSERT_NULL(a,e){\
   if(a == NULL){\
@@ -28,5 +30,6 @@ int os_store (char* name, void* block, size_t len);
 bool str_equals(char* a, char* b);
 int readn(long fd, void *buf, size_t size);
 int writen(long fd, void *buf, size_t size);
+int os_connect(char *name);
 
 #endif // _SOCKET

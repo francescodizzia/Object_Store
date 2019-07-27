@@ -22,17 +22,6 @@ void sigIntHandler(){
 
 
 int main(int argc,char* argv[]){
- char nome[10];
- char buf[MAX_HEADER_SIZE];
- memset(buf, '\0', MAX_HEADER_SIZE);
- memset(nome, '\0', 10);
-
-  if(argv[1] != NULL)
-    strcpy(nome,argv[1]);
-
-  if(argv[2] != NULL)
-    strcpy(buf,argv[2]);
-
 
   signal(SIGPIPE, SIG_IGN);
   signal(SIGINT, sigIntHandler);
@@ -55,15 +44,34 @@ int main(int argc,char* argv[]){
    return -1;
  }
 
+ char buf[MAX_HEADER_SIZE];
+ memset(buf, '\0', MAX_HEADER_SIZE);
+
+ char nome[11];
+ memset(nome, '\0', 11);
+
+ strcpy(nome,argv[1]);
+ strcpy(buf,argv[2]);
+
 
   while(!terminate){
     //memset(buf, '\0', MAX_HEADER_SIZE);
    //if(argv[2] == NULL)
     //fgets(buf, MAX_HEADER_SIZE, stdin);
 
+   if(str_equals(argv[3],"store")){
     os_store(nome,buf, strlen(buf));
     readn(fd,buf,strlen(buf));
-    printf("[x] ho ricevuto: %s\n",buf);
+   }
+   else if(str_equals(argv[3],"register")){
+    os_connect(nome);
+    memset(buf, '\0', MAX_HEADER_SIZE);
+    readn(fd,buf,10);
+   }
+
+  pid_t pid = getpid();
+
+  printf("[pid: %d] ho ricevuto: %s\n",(int) pid,buf);
 
     //if(str_equals(buf, "quit"))
      terminate = true;

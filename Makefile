@@ -3,7 +3,7 @@ CFLAGS = -std=c99 -g -Wall -pedantic -L. -I.
 SOCKNAME = objstore.sock
 VALGRIND_FLAGS = --leak-check=full #-v
 
-all: server client
+all: clean server client dserver
 
 dserver: server
 	valgrind $(VALGRIND_FLAGS) ./server
