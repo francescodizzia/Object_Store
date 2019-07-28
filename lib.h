@@ -15,12 +15,9 @@ extern int fd;
 
 #define DEFAULT_CHUNK_SIZE 16
 #define MAX_HEADER_SIZE 16
-#define BUFFSIZE 16
 
 #define MAX_RESPONSE_SIZE 64
 
-extern pthread_mutex_t printThread;
-extern pthread_cond_t awaken;
 
 #define ASSERT_NULL(a,e){\
   if(a == NULL){\
@@ -31,7 +28,8 @@ extern pthread_cond_t awaken;
 }
 
 
-int os_store (char* name, void* block, size_t len);
+int os_store(char* name, void* block, size_t len);
+int os_delete(char *name);
 bool str_equals(char* a, char* b);
 int readn(long fd, void *buf, size_t size);
 int writen(long fd, void *buf, size_t size);

@@ -54,14 +54,13 @@ int main(int argc,char* argv[]){
    //if(argv[2] == NULL)
     //fgets(buf, MAX_HEADER_SIZE, stdin);
 
-  /* if(str_equals(argv[3],"store")){
-    os_store(nome,buf, strlen(buf));
-    readn(fd,buf,strlen(buf));
+   if(str_equals(argv[3],"store")){
+    os_store(argv[1],argv[2], strlen(argv[2]));
+    //readn(fd,buf,strlen(buf));
+    readn(fd,response_buf,MAX_RESPONSE_SIZE);
    }
-   else */
-   if(str_equals(argv[3],"register")){
+   else if(str_equals(argv[3],"register")){
     os_connect(argv[1]);
-    //memset(buf, '\0', MAX_HEADER_SIZE);
     readn(fd,response_buf,MAX_RESPONSE_SIZE);
    }
 

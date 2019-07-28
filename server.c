@@ -60,46 +60,34 @@ void toup(char *str) {
 void parse_request(int c_fd, char *str){
  if(str == NULL)return;
 
- int u;
  char *ptr = NULL;
- int len = -1;
+ size_t len = 0;
 
  char *action = strtok_r(str, " ", &ptr);
  char *name = strtok_r(NULL, " ", &ptr);
- //char* len_s = strtok_r(NULL, " ", &ptr);
-// size_t len = strtok_r(NULL, " ", &ptr);
-//size_t len = atol(lenstr);
-//len = (int) atol(len_s);
- //DEBUG_CMD(printf("ACTION: %s   NAME: %s LEN: %d\n", action, name, len));
- //printf("User: _%s_  s: %d\n",name,len);
+ char* len_s = strtok_r(NULL, " ", &ptr);
+ char* newline = strtok_r(NULL, " ", &ptr);
+ char* data = strtok_r(NULL, " ", &ptr);
+
+ if(len_s != NULL)
+  len = atol(len_s);
+
+
  if(action == NULL)return ;
 
-/*
- if(str_equals(action,"STORE")){
-  DEBUG_CMD(printf("STORE\n"));
-  char* buf = calloc(len+1, sizeof(char));
-  SYSCALL(u,readn(c_fd, buf, len),"read_store");
+ printf("len: %ld\n",len);
 
-  buf[len] = '\0';
-
-  DEBUG_CMD(printf("data: %s\n", buf));
-  toup(buf);
-  SYSCALL(u,writen(c_fd,buf,len),"write_store");
-  free(buf);
- }
- else
-*/
   if(str_equals(action,"REGISTER") && name != NULL){
   DEBUG_CMD(printf("REGISTER\n"));
 
   chdir(DATA_DIRECTORY);
   int result = mkdir(name,  0755);
 
- if(result == 0){ //SUCCESSO
+ if(result == 0){ //Successo nella creazione della dir
   writen(c_fd,"OK \n",MAX_RESPONSE_SIZE);
   printf("Invio OK\n");
  }
- else{
+ else{ //Fallimento
    printf("Invio FALLIMENTO\n");
    char fail_buf[MAX_RESPONSE_SIZE];
    memset(fail_buf,'\0',MAX_RESPONSE_SIZE);
@@ -108,19 +96,25 @@ void parse_request(int c_fd, char *str){
    writen(c_fd,fail_buf,MAX_RESPONSE_SIZE);
 
  }
- printf("[%ld] *fine richiesta*\n\n",c_fd);
+ printf("[%d] *fine richiesta*\n\n",c_fd);
 }
+  else if(str_equals(action,"STORE") ){
+    printf("Stored %s\n\n",data);
+    writen(c_fd,"OK \n",MAX_RESPONSE_SIZE);
+  }
 
 }
+
+#define TEST_SIZE 4096
 
 void *threadF(void *arg) {
   long connfd = (long)arg;
 
-  char header[MAX_HEADER_SIZE*2];
-   memset(header, '\0', MAX_HEADER_SIZE*2);
+  char header[TEST_SIZE];
+   memset(header, '\0', TEST_SIZE);
 
-  char finalheader[512];
-  memset(finalheader, '\0', 512);
+  char finalheader[TEST_SIZE];
+  memset(finalheader, '\0', TEST_SIZE);
 
 
   pthread_mutex_lock(&mtx);
@@ -128,32 +122,14 @@ void *threadF(void *arg) {
   pthread_mutex_unlock(&mtx);
 
   while(running){
-/*
-   FD_ZERO(&readfds);
-   FD_SET(connfd, &readfds);
 
-   timeout.tv_sec = 0;
-   timeout.tv_usec = 500000;
-
-   sret = select(connfd+1,&readfds, NULL, NULL, NULL);
-
-   if(sret == 0){
-     printf("sret = %d\n", sret);
-     printf(" timeout\n")
-     ;
-   }
-   else{
-     */
    int u=0;
 
+  SYSCALL(u,readn(connfd, header, DEFAULT_CHUNK_SIZE),"read_x");
 
-  // pthread_cond_wait(&awaken,&printThread);
-    SYSCALL(u,readn(connfd, header, DEFAULT_CHUNK_SIZE),"read_x");
+   if(u == 0)break;
 
-   if(u == 0){  //pthread_mutex_unlock(&printThread);
-break;}
-
-   printf("\n[%ld]%s",connfd, header);
+   //printf("\n[%ld]%s",connfd, header);
 
   //FAI COSE COL DATO RICEVUTO
 	//toup(header);
@@ -162,23 +138,10 @@ break;}
 
 
   if(header[u-1] == '\0'){
-      parse_request(connfd, finalheader);
-/*
-      writen(connfd,"OK \n",MAX_RESPONSE_SIZE);
-      printf("Invio OK\n");
-  printf("[%ld] *fine richiesta*\n\n",connfd);
-*/
-  /*
-  chdir("./users/");
-  mkdir(finalheader,  0755);
-  */
-  memset(finalheader,'\0',512);
+    parse_request(connfd, finalheader);
+    memset(finalheader,'\0',512);
   }
 
-//  pthread_mutex_unlock(&printThread);
-
-	//writen(connfd, header, MAX_HEADER_SIZE);
-//  }
 }
   close(connfd);
 

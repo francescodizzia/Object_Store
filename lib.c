@@ -14,54 +14,74 @@
 #include <ctype.h>
 #include <fcntl.h>
 
-#include<lib.h>
+#include <lib.h>
 
 int fd = -1;
 
-pthread_mutex_t printThread = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t awaken;
+#define STORE_LENGTH 11
+#define REGISTER_LENGTH 12
 
-int os_store(char *name, void *block, size_t len) {
-	char *buff = calloc(BUFFSIZE, sizeof(char));
 
-  sprintf(buff,"STORE %s %lu \n ",name, len);
-
-	writen(fd, buff, BUFFSIZE);
-	writen(fd, block, len);
-  free(buff);
-
-	return true;
-}
-/*
-int os_connect(char *name) {
-	char *buff = calloc(BUFFSIZE, sizeof(char));
-
-  sprintf(buff,"REGISTER %s \n ",name);
-
-	writen(fd, buff, BUFFSIZE);
-  free(buff);
-
-	return true;
-}
-*/
-//13+len
-int os_connect(char *name) {
-	int len = strlen(name);
-	int current_chunk = DEFAULT_CHUNK_SIZE;
-
-  while(current_chunk < len+12)
+ssize_t getChunkSize(ssize_t N){
+ ssize_t current_chunk = DEFAULT_CHUNK_SIZE;
+ while(current_chunk < N)
 	  current_chunk = current_chunk * 2;
 
-		printf("name: %s | strlen: %d | chunk: %d\n",name ,len ,current_chunk);
+ return current_chunk;
+}
 
-	char *buff = calloc(current_chunk, sizeof(char));
+size_t getNumberOfDigits(int k){
+	if(k == 0)return 1;
+  if(k < 0){printf("BAKANA\n");return -1;}
+
+  int len;
+  for(len = 0; k > 0; len++)
+    k = k/10;
+
+	return len;
+}
+
+int os_store(char *name, void *block, size_t len) {
+  ssize_t N = STORE_LENGTH + strlen(name) + getNumberOfDigits(len) + len;
+  ssize_t chunks = getChunkSize(N);
+
+  char* buff = calloc(chunks, sizeof(char));
+  sprintf(buff,"STORE %s %lu \n %s",name, len, (char*)block);
+
+	printf("buff: %s | len: %ld | chunk: %ld\n",buff ,N ,chunks);
+
+	writen(fd, buff, chunks);
+	//writen(fd, block, len);
+
+	return true;
+}
+
+
+int os_connect(char *name) {
+	int len = strlen(name);/*
+	int current_chunk = DEFAULT_CHUNK_SIZE;
+
+  while(current_chunk < len + REGISTER_LENGTH)
+	  current_chunk = current_chunk * 2;
+*/
+  ssize_t chunks = getChunkSize(len+REGISTER_LENGTH);
+
+	printf("name: %s | strlen: %d | chunk: %ld\n",name ,len ,chunks);
+
+	char *buff = calloc(chunks, sizeof(char));
 
   sprintf(buff,"REGISTER %s \n",name);
 
-	writen(fd, buff, current_chunk);
+	writen(fd, buff, chunks);
   free(buff);
 
 	return true;
+}
+
+int os_delete(char* name){
+ //TODO
+
+ return true;
 }
 
 bool str_equals(char* a, char* b){
