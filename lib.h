@@ -17,6 +17,7 @@ extern int fd;
 #define MAX_HEADER_SIZE 16
 
 #define MAX_RESPONSE_SIZE 64
+#define MAX_USER_SIZE 256
 
 
 #define ASSERT_NULL(a,e){\
@@ -27,12 +28,16 @@ extern int fd;
   }\
 }
 
+char* getUserPath(char* username);
 bool createFile(char* filename, char* username);
+bool str_equals(char* a, char* b);
+
+int os_connect(char *name);
 int os_store(char* name, void* block, size_t len);
 int os_delete(char *name);
-bool str_equals(char* a, char* b);
+
 int readn(long fd, void *buf, size_t size);
 int writen(long fd, void *buf, size_t size);
-int os_connect(char *name);
+
 
 #endif // _SOCKET

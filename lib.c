@@ -57,6 +57,13 @@ int os_store(char *name, void *block, size_t len) {
 }
 */
 
+char* getUserPath(char* username){
+  char* path = calloc(MAX_PATH_SIZE,sizeof(char));
+  sprintf(path,"%s%s/",DATA_DIRECTORY,username);
+
+  return path;
+}
+
 bool createFile(char* filename, char* username){
  char path[MAX_PATH_SIZE];
  memset(path,'\0',MAX_PATH_SIZE);
@@ -78,12 +85,9 @@ bool createFile(char* filename, char* username){
 
 int os_store(char *name, void *block, size_t len) {
   ssize_t N = STORE_LENGTH + strlen(name) + getNumberOfDigits(len) + len;
-  //ssize_t chunks = getChunkSize(N);
 
   char* buff = calloc(N, sizeof(char));
   sprintf(buff,"STORE %s %lu \n %s",name, len, (char*)block);
-
-	//printf("buff: %s | len: %ld | chunk: %ld\n",buff ,N ,chunks);
 
 	writen(fd, buff, N);
 	//writen(fd, block, len);
@@ -93,21 +97,14 @@ int os_store(char *name, void *block, size_t len) {
 }
 
 int os_connect(char *name) {
-	int len = strlen(name);/*
-	int current_chunk = DEFAULT_CHUNK_SIZE;
+  int len = strlen(name);
+  int N = len+REGISTER_LENGTH;
 
-  while(current_chunk < len + REGISTER_LENGTH)
-	  current_chunk = current_chunk * 2;
-*/
-  ssize_t chunks = getChunkSize(len+REGISTER_LENGTH);
-
-	printf("name: %s | strlen: %d | chunk: %ld\n",name ,len ,chunks);
-
-	char *buff = calloc(chunks, sizeof(char));
-
+  char* buff = calloc(N, sizeof(char));
   sprintf(buff,"REGISTER %s \n",name);
 
-	writen(fd, buff, chunks);
+	writen(fd, buff, N);
+	//writen(fd, block, len);
   free(buff);
 
 	return true;

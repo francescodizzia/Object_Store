@@ -3,11 +3,13 @@ CFLAGS = -std=c99 -D_POSIX_C_SOURCE=200809L -g -Wall -pedantic -L. -I. #-fsaniti
 SOCKNAME = objstore.sock
 VALGRIND_FLAGS = --leak-check=full #-v
 
+SERVER_COMPILE = server.c thread_worker.c parser.c
+
 all: clean dir server client
 
 dir :
 	mkdir data
-	mkdir data/fdizzia
+#	mkdir data/fdizzia
 
 dserver: server
 	valgrind $(VALGRIND_FLAGS) ./server
@@ -21,8 +23,8 @@ rclient: client
 rserver: server
 	@./server
 
-server: server.c thread_worker.c parser.c libplug.a
-	$(CC) $(CFLAGS) $< thread_worker.c parser.c -o $@ -lplug -lpthread
+server: $(SERVER_COMPILE) libplug.a
+	$(CC) $(CFLAGS) $(SERVER_COMPILE) -o $@ -lplug -lpthread
 
 client: client.c libplug.a
 	$(CC) $(CFLAGS) $< -o $@ -lplug

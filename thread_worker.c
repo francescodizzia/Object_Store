@@ -24,45 +24,37 @@
 void *thread_worker(void *arg) {
   long connfd = (long)arg;
 
+ //MUST CHANGE!
   char header[TEST_SIZE];
-   memset(header, '\0', TEST_SIZE);
-
   char finalheader[TEST_SIZE];
-  memset(finalheader, '\0', TEST_SIZE);
 
+  memset(header, '\0', TEST_SIZE);
+  memset(finalheader, '\0', TEST_SIZE);
 
   pthread_mutex_lock(&mtx);
   n_clients++;
   pthread_mutex_unlock(&mtx);
 
   while(running){
+    int u = 0;
 
-   int u = 0;
-  //SYSCALL(u,read(connfd, header, DEFAULT_CHUNK_SIZE),"read_x");
-/*
-  while((t = read(connfd,header,DEFAULT_CHUNK_SIZE)) == DEFAULT_CHUNK_SIZE){
-    //u = 0;
+    SYSCALL(u,read(connfd, header, DEFAULT_CHUNK_SIZE),"read_x1");
+    if(u == 0)break;
     strcat(finalheader,header);
-    printf("bytes read:%d|msg:%s|total_header:%s\n\n",t,header,finalheader);
-    u+=t;
-  }
-*/
- SYSCALL(u,read(connfd, header, DEFAULT_CHUNK_SIZE),"read_x1");
- if(u == 0)break;
- strcat(finalheader,header);
 
+    if(header[u-1] == '\0'){
+      parse_request(connfd, finalheader);
+      memset(finalheader,'\0',TEST_SIZE);
+      memset(header,'\0',TEST_SIZE);
+    }
 
-  if(header[u-1] == '\0'){
-    parse_request(connfd, finalheader);
-    memset(finalheader,'\0',TEST_SIZE);
-    memset(header,'\0',TEST_SIZE);
   }
 
-}
   close(connfd);
 
   pthread_mutex_lock(&mtx);
   n_clients--;
+
   if(n_clients <= 0)
     pthread_cond_signal(&empty);
 

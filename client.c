@@ -41,39 +41,27 @@ int main(int argc,char* argv[]){
 
 
   if( (c = connect(fd, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) == -1){
-   printf("[-] Server not up\n");
-   return -1;
- }
+    printf("[-] Server not up\n");
+    return -1;
+  }
 
- char response_buf[MAX_RESPONSE_SIZE];
- memset(response_buf, '\0', MAX_RESPONSE_SIZE);
+  char response_buf[MAX_RESPONSE_SIZE];
+  memset(response_buf, '\0', MAX_RESPONSE_SIZE);
 
 
-  //while(!terminate){
-    //memset(buf, '\0', MAX_HEADER_SIZE);
-   //if(argv[2] == NULL)
-    //fgets(buf, MAX_HEADER_SIZE, stdin);
-
-   if(str_equals(argv[3],"store")){
+  if(str_equals(argv[3],"store")){
     os_store(argv[1],argv[2], strlen(argv[2]));
-    //readn(fd,buf,strlen(buf));
     readn(fd,response_buf,MAX_RESPONSE_SIZE);
-   }
-   else if(str_equals(argv[3],"register")){
+  }
+  else if(str_equals(argv[3],"register")){
     os_connect(argv[1]);
     readn(fd,response_buf,MAX_RESPONSE_SIZE);
-   }
+  }
 
-  pid_t pid = getpid();
+  printf("[pid: %d] ho ricevuto: %s\n",(int) getpid(),response_buf);
 
-  printf("[pid: %d] ho ricevuto: %s\n",(int) pid,response_buf);
-
-    //if(str_equals(buf, "quit"))
-    // terminate = true;
-//  }
-
-printf("closing fd");
   close(fd);
-printf("\nCLOSED!");
+  printf("\nCLOSED!");
+
   return 0;
 }
