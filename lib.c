@@ -64,7 +64,7 @@ char* getUserPath(char* username){
   return path;
 }
 
-bool createFile(char* filename, char* username){
+bool createFile(char* filename, char* data, char* username){
  char path[MAX_PATH_SIZE];
  memset(path,'\0',MAX_PATH_SIZE);
  strcpy(path,DATA_DIRECTORY);
@@ -74,7 +74,8 @@ bool createFile(char* filename, char* username){
  printf("path: %s\n",path);
  strcat(path,filename);
 
- int create_f = open(path, O_CREAT | O_RDWR );
+ int create_f = open(path, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR);
+ write(create_f, data, strlen(data)+1);
 
  if(create_f == -1)
   return false;

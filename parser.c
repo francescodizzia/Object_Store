@@ -18,12 +18,12 @@
 #include <lib.h>
 
 
-char current_user[MAX_USER_SIZE];
+char currentUser[MAX_USER_SIZE];
 
 void addUser(char* name){
   //if NOT connected then
-    memset(current_user, '\0',MAX_USER_SIZE);
-    strcpy(current_user,name);
+    memset(currentUser, '\0',MAX_USER_SIZE);
+    strcpy(currentUser,name);
 }
 
 
@@ -74,7 +74,7 @@ void parse_request(int c_fd, char *str){
   }
 
   else if(str_equals(action,"STORE") ){
-    int success = createFile(data,current_user);
+    int success = createFile(name,data,currentUser);
 
     if(success){
       printf("Stored %s\n\n",data);

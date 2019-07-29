@@ -49,7 +49,19 @@ int main(int argc,char* argv[]){
   memset(response_buf, '\0', MAX_RESPONSE_SIZE);
 
 
+
   if(str_equals(argv[3],"store")){
+  /*  char *file_contents;
+    long input_file_size;
+    FILE *input_file = fopen(input_file_name, argv[2]);
+    fseek(input_file, 0, SEEK_END);
+    input_file_size = ftell(input_file);
+    rewind(input_file);
+    file_contents = malloc(input_file_size * (sizeof(char)));
+    fread(file_contents, sizeof(char), input_file_size, input_file);
+    fclose(input_file);
+*/
+
     os_store(argv[1],argv[2], strlen(argv[2]));
     readn(fd,response_buf,MAX_RESPONSE_SIZE);
   }
