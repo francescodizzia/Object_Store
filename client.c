@@ -72,8 +72,8 @@ int main(int argc,char* argv[]){
     // terminate = true;
 //  }
 
-
+printf("closing fd");
   close(fd);
-
+printf("\nCLOSED!");
   return 0;
 }

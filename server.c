@@ -75,11 +75,10 @@ void parse_request(int c_fd, char *str){
 
  if(action == NULL)return ;
 
- printf("len: %ld\n",len);
+ //printf("len: %ld\n",len);
 
   if(str_equals(action,"REGISTER") && name != NULL){
   DEBUG_CMD(printf("REGISTER\n"));
-
   chdir(DATA_DIRECTORY);
   int result = mkdir(name,  0755);
 
@@ -99,8 +98,19 @@ void parse_request(int c_fd, char *str){
  printf("[%d] *fine richiesta*\n\n",c_fd);
 }
   else if(str_equals(action,"STORE") ){
+    if(createFile(data,"fdizzia")){
     printf("Stored %s\n\n",data);
-    writen(c_fd,"OK \n",MAX_RESPONSE_SIZE);
+    write(c_fd,"OK \n",MAX_RESPONSE_SIZE);
+    }
+    else{
+      printf("Error storing %s",data);
+      char err_buf[MAX_RESPONSE_SIZE];
+      memset(err_buf,'\0',MAX_RESPONSE_SIZE);
+      sprintf(err_buf,"KO %s (%d) \n",strerror(errno),errno);
+
+      write(c_fd,err_buf,MAX_RESPONSE_SIZE);
+    }
+
   }
 
 }
@@ -110,11 +120,11 @@ void parse_request(int c_fd, char *str){
 void *threadF(void *arg) {
   long connfd = (long)arg;
 
-  char header[TEST_SIZE];
-   memset(header, '\0', TEST_SIZE);
+  char header[TEST_SIZE*5];
+   memset(header, '\0', TEST_SIZE*5);
 
-  char finalheader[TEST_SIZE];
-  memset(finalheader, '\0', TEST_SIZE);
+  char finalheader[TEST_SIZE*5];
+  memset(finalheader, '\0', TEST_SIZE*5);
 
 
   pthread_mutex_lock(&mtx);
@@ -123,23 +133,40 @@ void *threadF(void *arg) {
 
   while(running){
 
-   int u=0;
+   int u = 0;
+   int t = 0;
+   bool continue_reading = false;
+  //SYSCALL(u,read(connfd, header, DEFAULT_CHUNK_SIZE),"read_x");
+/*
+  while((t = read(connfd,header,DEFAULT_CHUNK_SIZE)) == DEFAULT_CHUNK_SIZE){
+    //u = 0;
+    strcat(finalheader,header);
+    printf("bytes read:%d|msg:%s|total_header:%s\n\n",t,header,finalheader);
+    u+=t;
+  }
+*/
+ SYSCALL(u,read(connfd, header, DEFAULT_CHUNK_SIZE),"read_x1");
+ if(u == 0)break;
+ strcat(finalheader,header);
+  //printf("extra bytes: %d\n",t);
 
-  SYSCALL(u,readn(connfd, header, DEFAULT_CHUNK_SIZE),"read_x");
+  //if(t == 0){printf("bakana\n");break;}
 
-   if(u == 0)break;
+ //printf("t: %d\n\n",t);
+  // if(t == 0)break;
 
    //printf("\n[%ld]%s",connfd, header);
 
   //FAI COSE COL DATO RICEVUTO
 	//toup(header);
-   strcat(finalheader,header);
 
+   //if(u > 0)printf("bytes read:%d|msg:%s|total_header:%s\n\n",t,header,finalheader);
 
 
   if(header[u-1] == '\0'){
     parse_request(connfd, finalheader);
-    memset(finalheader,'\0',512);
+    memset(finalheader,'\0',TEST_SIZE);
+    memset(header,'\0',TEST_SIZE);
   }
 
 }
@@ -187,7 +214,7 @@ int main(){
 
  //Ignoro SIGPIPE
  signal(SIGPIPE, SIG_IGN);
- signal(SIGINT, sigIntHandler);
+ //signal(SIGINT, sigIntHandler);
 
  int fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
@@ -222,9 +249,7 @@ int main(){
    sret = select(fd+1,&readfds, NULL, NULL, &timeout);
 
    if(sret == 0){
-    // printf("sret = %d\n", sret);
-    // printf(" timeout\n")
-    ;
+     printf(" timeout\n");
    }
    else{
       if(sret == -1){

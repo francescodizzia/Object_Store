@@ -11,6 +11,7 @@ extern int fd;
 #define SOCKNAME "objstore.sock"
 #define MAX_CONN 256
 
+#define MAX_PATH_SIZE 4096
 #define DATA_DIRECTORY "./data/"
 
 #define DEFAULT_CHUNK_SIZE 16
@@ -27,7 +28,7 @@ extern int fd;
   }\
 }
 
-
+bool createFile(char* filename, char* username);
 int os_store(char* name, void* block, size_t len);
 int os_delete(char *name);
 bool str_equals(char* a, char* b);

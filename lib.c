@@ -40,7 +40,7 @@ size_t getNumberOfDigits(int k){
 
 	return len;
 }
-
+/*
 int os_store(char *name, void *block, size_t len) {
   ssize_t N = STORE_LENGTH + strlen(name) + getNumberOfDigits(len) + len;
   ssize_t chunks = getChunkSize(N);
@@ -55,7 +55,42 @@ int os_store(char *name, void *block, size_t len) {
 
 	return true;
 }
+*/
 
+bool createFile(char* filename, char* username){
+ char path[MAX_PATH_SIZE];
+ memset(path,'\0',MAX_PATH_SIZE);
+ strcpy(path,DATA_DIRECTORY);
+
+ strcat(path,username);
+ strcat(path,"/");
+ printf("path: %s\n",path);
+ strcat(path,filename);
+
+ int create_f = open(path, O_CREAT | O_RDWR );
+
+ if(create_f == -1)
+  return false;
+
+ close(create_f);
+ return true;
+}
+
+int os_store(char *name, void *block, size_t len) {
+  ssize_t N = STORE_LENGTH + strlen(name) + getNumberOfDigits(len) + len;
+  //ssize_t chunks = getChunkSize(N);
+
+  char* buff = calloc(N, sizeof(char));
+  sprintf(buff,"STORE %s %lu \n %s",name, len, (char*)block);
+
+	//printf("buff: %s | len: %ld | chunk: %ld\n",buff ,N ,chunks);
+
+	writen(fd, buff, N);
+	//writen(fd, block, len);
+  free(buff);
+
+	return true;
+}
 
 int os_connect(char *name) {
 	int len = strlen(name);/*
@@ -77,6 +112,8 @@ int os_connect(char *name) {
 
 	return true;
 }
+
+
 
 int os_delete(char* name){
  //TODO
