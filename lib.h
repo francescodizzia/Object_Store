@@ -1,4 +1,3 @@
-
 #if !defined(_SOCKET)
 #define _SOCKET
 

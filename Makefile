@@ -21,8 +21,8 @@ rclient: client
 rserver: server
 	@./server
 
-server: server.c libplug.a
-	$(CC) $(CFLAGS) $< -o $@ -lplug -lpthread
+server: server.c thread_worker.c parser.c libplug.a
+	$(CC) $(CFLAGS) $< thread_worker.c parser.c -o $@ -lplug -lpthread
 
 client: client.c libplug.a
 	$(CC) $(CFLAGS) $< -o $@ -lplug

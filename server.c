@@ -16,6 +16,7 @@
 #include <fcntl.h>
 
 #include <lib.h>
+#include <thread_worker.h>
 
 #define _POSIX_C_SOURCE 200809L
 #define MAX_ACTION_LENGTH 9
@@ -26,18 +27,14 @@
 char* OK_RESPONSE = "OK \n";
 
 
-
-#define SYSCALL(r,c,e) \
-    if((r=c)==-1) { perror(e);printf(" errore:%d\n",errno); exit(1);}
-
 #define DEBUG_CMD(c) \
   if(DEBUG_ENABLED) {c;}
 
-static volatile sig_atomic_t running = true;
-static pthread_mutex_t mtx;
-static pthread_cond_t empty;
+volatile sig_atomic_t running = true;
+pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t empty;
 
-static int n_clients = 0;
+int n_clients = 0;
 
 
 void cleanup() {
@@ -57,74 +54,17 @@ void toup(char *str) {
     }
 }
 
-void parse_request(int c_fd, char *str){
- if(str == NULL)return;
-
- char *ptr = NULL;
- size_t len = 0;
-
- char *action = strtok_r(str, " ", &ptr);
- char *name = strtok_r(NULL, " ", &ptr);
- char* len_s = strtok_r(NULL, " ", &ptr);
- char* newline = strtok_r(NULL, " ", &ptr);
- char* data = strtok_r(NULL, " ", &ptr);
-
- if(len_s != NULL)
-  len = atol(len_s);
-
-
- if(action == NULL)return ;
-
- //printf("len: %ld\n",len);
-
-  if(str_equals(action,"REGISTER") && name != NULL){
-  DEBUG_CMD(printf("REGISTER\n"));
-  chdir(DATA_DIRECTORY);
-  int result = mkdir(name,  0755);
-
- if(result == 0){ //Successo nella creazione della dir
-  writen(c_fd,"OK \n",MAX_RESPONSE_SIZE);
-  printf("Invio OK\n");
- }
- else{ //Fallimento
-   printf("Invio FALLIMENTO\n");
-   char fail_buf[MAX_RESPONSE_SIZE];
-   memset(fail_buf,'\0',MAX_RESPONSE_SIZE);
-
-   sprintf(fail_buf,"KO %d \n", errno);
-   writen(c_fd,fail_buf,MAX_RESPONSE_SIZE);
-
- }
- printf("[%d] *fine richiesta*\n\n",c_fd);
-}
-  else if(str_equals(action,"STORE") ){
-    if(createFile(data,"fdizzia")){
-    printf("Stored %s\n\n",data);
-    write(c_fd,"OK \n",MAX_RESPONSE_SIZE);
-    }
-    else{
-      printf("Error storing %s",data);
-      char err_buf[MAX_RESPONSE_SIZE];
-      memset(err_buf,'\0',MAX_RESPONSE_SIZE);
-      sprintf(err_buf,"KO %s (%d) \n",strerror(errno),errno);
-
-      write(c_fd,err_buf,MAX_RESPONSE_SIZE);
-    }
-
-  }
-
-}
 
 #define TEST_SIZE 4096
-
-void *threadF(void *arg) {
+/*
+void *thread_worker(void *arg) {
   long connfd = (long)arg;
 
-  char header[TEST_SIZE*5];
-   memset(header, '\0', TEST_SIZE*5);
+  char header[TEST_SIZE];
+   memset(header, '\0', TEST_SIZE);
 
-  char finalheader[TEST_SIZE*5];
-  memset(finalheader, '\0', TEST_SIZE*5);
+  char finalheader[TEST_SIZE];
+  memset(finalheader, '\0', TEST_SIZE);
 
 
   pthread_mutex_lock(&mtx);
@@ -134,33 +74,18 @@ void *threadF(void *arg) {
   while(running){
 
    int u = 0;
-   int t = 0;
-   bool continue_reading = false;
   //SYSCALL(u,read(connfd, header, DEFAULT_CHUNK_SIZE),"read_x");
-/*
+
   while((t = read(connfd,header,DEFAULT_CHUNK_SIZE)) == DEFAULT_CHUNK_SIZE){
     //u = 0;
     strcat(finalheader,header);
     printf("bytes read:%d|msg:%s|total_header:%s\n\n",t,header,finalheader);
     u+=t;
   }
-*/
+
  SYSCALL(u,read(connfd, header, DEFAULT_CHUNK_SIZE),"read_x1");
  if(u == 0)break;
  strcat(finalheader,header);
-  //printf("extra bytes: %d\n",t);
-
-  //if(t == 0){printf("bakana\n");break;}
-
- //printf("t: %d\n\n",t);
-  // if(t == 0)break;
-
-   //printf("\n[%ld]%s",connfd, header);
-
-  //FAI COSE COL DATO RICEVUTO
-	//toup(header);
-
-   //if(u > 0)printf("bytes read:%d|msg:%s|total_header:%s\n\n",t,header,finalheader);
 
 
   if(header[u-1] == '\0'){
@@ -181,6 +106,7 @@ void *threadF(void *arg) {
 
   return NULL;
 }
+*/
 
 void spawn_thread(long connfd) {
     pthread_attr_t thattr;
@@ -200,7 +126,7 @@ void spawn_thread(long connfd) {
      return;
     }
 
-    if (pthread_create(&thid, &thattr, threadF, (void*)connfd) != 0) {
+    if (pthread_create(&thid, &thattr, thread_worker, (void*)connfd) != 0) {
      fprintf(stderr, "pthread_create FALLITA");
 	   pthread_attr_destroy(&thattr);
 	   close(connfd);
