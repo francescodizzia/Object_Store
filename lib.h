@@ -29,7 +29,7 @@ extern int fd;
 }
 
 char* getUserPath(char* username);
-bool createFile(char* filename, char* data, char* username);
+bool createFile(char* filename, void* data, char* username, size_t size);
 bool str_equals(char* a, char* b);
 
 int os_connect(char *name);

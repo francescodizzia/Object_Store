@@ -9,10 +9,12 @@ muda_str="${muda_str}_MUDA"
 done
 
 
-for i in {1..20}
+for i in {1..1}
 do
-  ./client "user_${i}" "msg_${i}" "register"
-  ./client "user_${i}" "msg_${i}" "store"
+#  ./client "user_${i}" "msg_${i}" "register"
+#  ./client "user_${i}" "msg_${i}" "store"
+#  ./client "user_${i}" "./art.gif" "store"
+./client "./meme.jpg" "./new.jpg" "store"
 
 done
 #  ./client "fdizzia" "msg#${j}#${i}${i}${i}${i}${i}${i}_end_" "store"

@@ -19,7 +19,7 @@
 #include <server.h>
 #include <parser.h>
 
-#define TEST_SIZE 4096
+#define TEST_SIZE 409600
 
 void *thread_worker(void *arg) {
   long connfd = (long)arg;
@@ -35,18 +35,29 @@ void *thread_worker(void *arg) {
   n_clients++;
   pthread_mutex_unlock(&mtx);
 
+ int u=0,t,sret;
+ bool finished = false;
+
+ fd_set readfds2;
+ struct timeval timeout;
+
   while(running){
-    int u = 0;
 
-    SYSCALL(u,read(connfd, header, DEFAULT_CHUNK_SIZE),"read_x1");
-    if(u == 0)break;
-    strcat(finalheader,header);
+ // while( (u = read(connfd, header+u, DEFAULT_CHUNK_SIZE)) == DEFAULT_CHUNK_SIZE );
+  u = read(connfd, header, TEST_SIZE);
 
-    if(header[u-1] == '\0'){
-      parse_request(connfd, finalheader);
-      memset(finalheader,'\0',TEST_SIZE);
-      memset(header,'\0',TEST_SIZE);
-    }
+  if(u == 0)break;
+   t+=u;
+
+ if(!finished){
+   mkdir("./data/user_1/",  0755);
+  //createFile("test",header,"user_1");
+  parse_request(connfd,header);
+  finished = true;
+ }
+
+
+  //  }
 
   }
 

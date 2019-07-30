@@ -64,7 +64,7 @@ char* getUserPath(char* username){
   return path;
 }
 
-bool createFile(char* filename, char* data, char* username){
+bool createFile(char* filename, void* data, char* username, size_t size){
  char path[MAX_PATH_SIZE];
  memset(path,'\0',MAX_PATH_SIZE);
  strcpy(path,DATA_DIRECTORY);
@@ -75,27 +75,38 @@ bool createFile(char* filename, char* data, char* username){
  strcat(path,filename);
 
  int create_f = open(path, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR);
- write(create_f, data, strlen(data)+1);
+
 
  if(create_f == -1)
   return false;
+
+ write(create_f, data, size);
 
  close(create_f);
  return true;
 }
 
 int os_store(char *name, void *block, size_t len) {
-  ssize_t N = STORE_LENGTH + strlen(name) + getNumberOfDigits(len) + len;
+  char* buff = calloc(10240, sizeof(char));
 
-  char* buff = calloc(N, sizeof(char));
-  sprintf(buff,"STORE %s %lu \n %s",name, len, (char*)block);
+  sprintf(buff,"STORE %s %lu \n ",name, len);
 
-	writen(fd, buff, N);
-	//writen(fd, block, len);
+
+  //memcpy(buff+strlen(buff)-1,block,len);
+//	writen(fd, buff, N);
+  //createFile("test",block,"user_1");
+  //return false;
+  //strcat(buff,(char*)block);
+  //createFile("test",buff,"user_1",261);
+
+  //write(fd, buff, strlen(buff)+len);
+  writen(fd,buff,strlen(buff));
+  writen(fd,block,len);
   free(buff);
 
 	return true;
 }
+
 
 int os_connect(char *name) {
   int len = strlen(name);

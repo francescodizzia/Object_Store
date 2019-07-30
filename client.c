@@ -9,7 +9,7 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <pthread.h>
-
+#include <sys/stat.h>
 #include <lib.h>
 
 bool terminate = false;
@@ -49,20 +49,30 @@ int main(int argc,char* argv[]){
   memset(response_buf, '\0', MAX_RESPONSE_SIZE);
 
 
+#define MAX_FILE_SIZE 10240
 
   if(str_equals(argv[3],"store")){
-  /*  char *file_contents;
-    long input_file_size;
-    FILE *input_file = fopen(input_file_name, argv[2]);
-    fseek(input_file, 0, SEEK_END);
-    input_file_size = ftell(input_file);
-    rewind(input_file);
-    file_contents = malloc(input_file_size * (sizeof(char)));
-    fread(file_contents, sizeof(char), input_file_size, input_file);
-    fclose(input_file);
-*/
+    FILE *f;
+    char *buffer = calloc(MAX_FILE_SIZE,1);
 
-    os_store(argv[1],argv[2], strlen(argv[2]));
+    f = fopen(argv[1], "rb");
+    if (f)
+    {
+      int n = fread(buffer, MAX_FILE_SIZE, 1, f);
+    }
+
+    int d = fileno(f);
+
+    struct stat finfo;
+    fstat(d, &finfo);
+
+    size_t size = finfo.st_size;
+//    buffer[strlen(buffer)-1] = '\0';
+    printf("\nBAKANA %ld\n",size);
+    os_store(argv[2],buffer, size);
+    fclose(f);
+    //createFile("test",buffer,"");
+
     readn(fd,response_buf,MAX_RESPONSE_SIZE);
   }
   else if(str_equals(argv[3],"register")){

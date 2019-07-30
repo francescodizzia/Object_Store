@@ -27,29 +27,34 @@ void addUser(char* name){
 }
 
 
+
 void parse_request(int c_fd, char *str){
  if(str == NULL)return;
 
  char *ptr = NULL;
  size_t len = 0;
+int K=0;
 
  char *action = strtok_r(str, " ", &ptr);
  char *name = strtok_r(NULL, " ", &ptr);
  char* len_s = strtok_r(NULL, " ", &ptr);
  //newline
- strtok_r(NULL, " ", &ptr);
+ char *newline = strtok_r(NULL, " ", &ptr);
 
- char* data = strtok_r(NULL, " ", &ptr);
-
- if(len_s != NULL)
-  len = atol(len_s);
+if(action == NULL)return;
+//char* data = strtok_r(NULL, " ", &ptr);
 
 
- if(action == NULL)return ;
+if(len_s != NULL)  len = atol(len_s);
+
+
+ //if(action == NULL)return ;
 
  //debug
- if(false)printf("len: %ld\n",len);
-
+ if(true){
+   printf("Action:%s[%d]|Name:%s[%d]|len:%d[%d]\n",action,strlen(action),name,strlen(name),len,getNumberOfDigits(len));
+}
+/*
   if(str_equals(action,"REGISTER")){
     char* user_path = getUserPath(name);
     int result = mkdir(user_path,  0755);
@@ -72,9 +77,15 @@ void parse_request(int c_fd, char *str){
     }
     printf("[%d] *fine richiesta*\n\n",c_fd);
   }
+*/
+  if(str_equals(action,"STORE") ){
+    printf("CIAO\n");
+    void *data = calloc(len,sizeof(void*));
+    memcpy(data,((void*)newline+2),len);
+    //readn(fd,data,len);
+    //createFile("user_1",data,currentUser);
 
-  else if(str_equals(action,"STORE") ){
-    int success = createFile(name,data,currentUser);
+    int success = createFile(name,(void*)data,"user_1",len);
 
     if(success){
       printf("Stored %s\n\n",data);
