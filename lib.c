@@ -18,7 +18,7 @@
 
 int fd = -1;
 
-#define STORE_LENGTH 11
+#define STORE_LENGTH 10
 #define REGISTER_LENGTH 12
 
 
@@ -40,22 +40,7 @@ size_t getNumberOfDigits(int k){
 
 	return len;
 }
-/*
-int os_store(char *name, void *block, size_t len) {
-  ssize_t N = STORE_LENGTH + strlen(name) + getNumberOfDigits(len) + len;
-  ssize_t chunks = getChunkSize(N);
 
-  char* buff = calloc(chunks, sizeof(char));
-  sprintf(buff,"STORE %s %lu \n %s",name, len, (char*)block);
-
-	printf("buff: %s | len: %ld | chunk: %ld\n",buff ,N ,chunks);
-
-	writen(fd, buff, chunks);
-	//writen(fd, block, len);
-
-	return true;
-}
-*/
 
 char* getUserPath(char* username){
   char* path = calloc(MAX_PATH_SIZE,sizeof(char));
@@ -80,27 +65,23 @@ bool createFile(char* filename, void* data, char* username, size_t size){
  if(create_f == -1)
   return false;
 
- write(create_f, data, size);
+ int w = writen(create_f, data, size);
+
+ if(w == -1)
+  printf("INCREDIBBBILE\n");
 
  close(create_f);
  return true;
 }
 
 int os_store(char *name, void *block, size_t len) {
-  char* buff = calloc(10240, sizeof(char));
+  size_t store_size = STORE_LENGTH + strlen(name) + getNumberOfDigits(len);
+  char* buff = calloc(store_size, sizeof(char));
 
   sprintf(buff,"STORE %s %lu \n ",name, len);
+  printf("%d vs %d",store_size,strlen(buff));
 
-
-  //memcpy(buff+strlen(buff)-1,block,len);
-//	writen(fd, buff, N);
-  //createFile("test",block,"user_1");
-  //return false;
-  //strcat(buff,(char*)block);
-  //createFile("test",buff,"user_1",261);
-
-  //write(fd, buff, strlen(buff)+len);
-  writen(fd,buff,strlen(buff));
+  writen(fd,buff,store_size);
   writen(fd,block,len);
   free(buff);
 
@@ -171,6 +152,8 @@ int writen(long fd, void *buf, size_t size) {
 	    if (errno == EINTR) continue;
 	    return -1;
 	 }
+
+   printf("Write r: %ld\n",size);
 
    if(r == 0)
     return 0;

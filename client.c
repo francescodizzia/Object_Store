@@ -49,8 +49,6 @@ int main(int argc,char* argv[]){
   memset(response_buf, '\0', MAX_RESPONSE_SIZE);
 
 
-#define MAX_FILE_SIZE 5240
-
   if(str_equals(argv[3],"store")){
     FILE *f;
 
@@ -64,22 +62,21 @@ int main(int argc,char* argv[]){
     size_t size = finfo.st_size;
 
     char *buffer = calloc(size,1);
-    if (f)
-    {
-      int n = fread(buffer, size, 1, f);
-    }
+    if(f)
+      fread(buffer, size, 1, f);
 
 //    buffer[strlen(buffer)-1] = '\0';
     printf("\nBAKANA %ld\n",size);
     os_store(argv[2],buffer, size);
+    free(buffer);
     fclose(f);
     //createFile("test",buffer,"");
 
-    readn(fd,response_buf,MAX_RESPONSE_SIZE);
+    read(fd,response_buf,MAX_RESPONSE_SIZE);
   }
   else if(str_equals(argv[3],"register")){
     os_connect(argv[1]);
-    readn(fd,response_buf,MAX_RESPONSE_SIZE);
+    read(fd,response_buf,MAX_RESPONSE_SIZE);
   }
 
   printf("[pid: %d] ho ricevuto: %s\n",(int) getpid(),response_buf);

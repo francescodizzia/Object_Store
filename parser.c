@@ -32,8 +32,7 @@ void parse_request(int c_fd, char *str){
  if(str == NULL)return;
 
  char *ptr = NULL;
- size_t len = 0;
-int K=0;
+ long int len = 0;
 
  char *action = strtok_r(str, " ", &ptr);
  char *name = strtok_r(NULL, " ", &ptr);
@@ -42,17 +41,12 @@ int K=0;
  char *newline = strtok_r(NULL, " ", &ptr);
 
 if(action == NULL)return;
-//char* data = strtok_r(NULL, " ", &ptr);
-
 
 if(len_s != NULL)  len = atol(len_s);
 
-
- //if(action == NULL)return ;
-
  //debug
  if(true){
-   printf("Action:%s[%d]|Name:%s[%d]|len:%d[%d]\n",action,strlen(action),name,strlen(name),len,getNumberOfDigits(len));
+  ;// printf("Action:%s[%d]|Name:%s[%ld]|len:%ld[%d]\n",action,strlen(action),name,strlen(name),len,getNumberOfDigits(len));
 }
 /*
   if(str_equals(action,"REGISTER")){
@@ -80,26 +74,32 @@ if(len_s != NULL)  len = atol(len_s);
 */
   if(str_equals(action,"STORE") ){
     printf("CIAO\n");
-    void *data = calloc(len,sizeof(void*));
-    memcpy(data,((void*)newline+2),len);//+2
-    //readn(fd,data,len);
-    //createFile("user_1",data,currentUser);
+    void *data = calloc(len,1);
+    int b = MAX_HEADER_SIZE-10-strlen(name)-getNumberOfDigits(len);
+    memcpy(data,newline+2,b);
+    //printf("letti: %d, da leggere: %d\n, letta: %s",b,len-b,(char*)data);
+    int n =readn(c_fd,data+b,len-b);
 
-    int success = createFile(name,(void*)data,"user_1",len);
+    //memcpy(data,(newline+2),len);//+2
+
+
+    int success = createFile(name,data,"user_1",len);
+
 
     if(success){
-      printf("Stored %s\n\n",data);
-      write(c_fd,"OK \n",MAX_RESPONSE_SIZE);
+      printf("Stored %p\n\n",data);
+      //write(c_fd,"OK \n",MAX_RESPONSE_SIZE);
+      writen(c_fd,"OK \n",5);
     }
     else{
-      printf("Error storing %s",data);
+      printf("Error storing %p",data);
       char err_buf[MAX_RESPONSE_SIZE];
       memset(err_buf,'\0',MAX_RESPONSE_SIZE);
       sprintf(err_buf,"KO %s (%d) \n",strerror(errno),errno);
 
       write(c_fd,err_buf,MAX_RESPONSE_SIZE);
     }
-
+   free(data);
   }
 
 }

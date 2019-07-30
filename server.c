@@ -55,8 +55,6 @@ void toup(char *str) {
 }
 
 
-#define TEST_SIZE 4096
-
 
 void spawn_thread(long connfd) {
   pthread_attr_t thattr;

@@ -1,12 +1,5 @@
 #!/bin/bash
 
-verylongmsg="AAABBBCCCDDDEEEEFFFFGGGGHHHHHIIIILLLLLMMMMMNNNNNOOOOOOPPPPPQQQQQQQRRRRSSSSSSSSSSSSTTTTTTTTUUUUUUUUXXXXXXXXYYYYYYYYYYYZZZZZ"
-muda_str=""
-
-for j in {1..200}
-do
-muda_str="${muda_str}_MUDA"
-done
 
 
 for i in {1..1}
@@ -14,7 +7,7 @@ do
 #  ./client "user_${i}" "msg_${i}" "register"
 #  ./client "user_${i}" "msg_${i}" "store"
 #  ./client "user_${i}" "./art.gif" "store"
-./client "./meme.jpg" "./new.jpg" "store"
+./client "./video.mp4" "./dream.mp4" "store" &
 
 done
 #  ./client "fdizzia" "msg#${j}#${i}${i}${i}${i}${i}${i}_end_" "store"

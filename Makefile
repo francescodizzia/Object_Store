@@ -17,14 +17,8 @@ dserver: server
 dclient: client
 	valgrind $(VALGRIND_FLAGS) ./client
 
-rclient: client
-	@./client
-
-rserver: server
-	@./server
-
 server: $(SERVER_COMPILE) libplug.a
-	$(CC) $(CFLAGS) $(SERVER_COMPILE) -o $@ -lplug -lpthread
+	$(CC) $(CFLAGS)  $(SERVER_COMPILE) -o $@ -lplug -lpthread
 
 client: client.c libplug.a
 	$(CC) $(CFLAGS) $< -o $@ -lplug

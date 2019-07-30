@@ -14,7 +14,7 @@ extern int fd;
 #define DATA_DIRECTORY "./data/"
 
 #define DEFAULT_CHUNK_SIZE 16
-#define MAX_HEADER_SIZE 16
+#define MAX_HEADER_SIZE 128
 
 #define MAX_RESPONSE_SIZE 64
 #define MAX_USER_SIZE 256
@@ -28,6 +28,7 @@ extern int fd;
   }\
 }
 
+size_t getNumberOfDigits(int k);
 char* getUserPath(char* username);
 bool createFile(char* filename, void* data, char* username, size_t size);
 bool str_equals(char* a, char* b);
