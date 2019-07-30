@@ -49,24 +49,26 @@ int main(int argc,char* argv[]){
   memset(response_buf, '\0', MAX_RESPONSE_SIZE);
 
 
-#define MAX_FILE_SIZE 10240
+#define MAX_FILE_SIZE 5240
 
   if(str_equals(argv[3],"store")){
     FILE *f;
-    char *buffer = calloc(MAX_FILE_SIZE,1);
+
 
     f = fopen(argv[1], "rb");
-    if (f)
-    {
-      int n = fread(buffer, MAX_FILE_SIZE, 1, f);
-    }
-
     int d = fileno(f);
 
     struct stat finfo;
     fstat(d, &finfo);
 
     size_t size = finfo.st_size;
+
+    char *buffer = calloc(size,1);
+    if (f)
+    {
+      int n = fread(buffer, size, 1, f);
+    }
+
 //    buffer[strlen(buffer)-1] = '\0';
     printf("\nBAKANA %ld\n",size);
     os_store(argv[2],buffer, size);

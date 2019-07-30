@@ -81,7 +81,7 @@ if(len_s != NULL)  len = atol(len_s);
   if(str_equals(action,"STORE") ){
     printf("CIAO\n");
     void *data = calloc(len,sizeof(void*));
-    memcpy(data,((void*)newline+2),len);
+    memcpy(data,((void*)newline+2),len);//+2
     //readn(fd,data,len);
     //createFile("user_1",data,currentUser);
 

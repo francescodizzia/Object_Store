@@ -19,7 +19,7 @@
 #include <server.h>
 #include <parser.h>
 
-#define TEST_SIZE 409600
+#define TEST_SIZE 80960
 
 void *thread_worker(void *arg) {
   long connfd = (long)arg;
