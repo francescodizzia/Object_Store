@@ -20,6 +20,31 @@ void sigIntHandler(){
  printf("ZA WARUDOOO\n");
 }
 
+void getResponseMsg(){
+  char response_buf[MAX_RESPONSE_SIZE];
+  memset(response_buf, '\0', MAX_RESPONSE_SIZE);
+
+  read(fd,response_buf,MAX_RESPONSE_SIZE);
+
+  printf("I got: %s\n",response_buf);
+}
+
+void test1(){
+
+  os_store("test0","xaxaxa", 6);
+  getResponseMsg();
+  os_connect("utente_prova");
+  getResponseMsg();
+  os_connect("utente_prova_2");
+  getResponseMsg();
+//  os_connect("utente_prova");
+//  getResponseMsg();
+  os_store("test1","this_one_should_success", strlen("this_one_should_success"));
+  getResponseMsg();
+  os_store("test2","this one too", strlen("this one too"));
+  getResponseMsg();
+
+}
 
 
 int main(int argc,char* argv[]){
@@ -44,11 +69,13 @@ int main(int argc,char* argv[]){
     printf("[-] Server not up\n");
     return -1;
   }
-
+/*
   char response_buf[MAX_RESPONSE_SIZE];
   memset(response_buf, '\0', MAX_RESPONSE_SIZE);
+*/
+  test1();
 
-
+/*
   if(str_equals(argv[3],"store")){
     FILE *f;
 
@@ -67,9 +94,10 @@ int main(int argc,char* argv[]){
 
 //    buffer[strlen(buffer)-1] = '\0';
     printf("\nBAKANA %ld\n",size);
-    os_store(argv[2],buffer, size);
-    free(buffer);
-    fclose(f);
+
+  //  os_store(argv[1],argv[2], strlen(argv[2]));
+  //  free(buffer);
+  //  fclose(f);
     //createFile("test",buffer,"");
 
     read(fd,response_buf,MAX_RESPONSE_SIZE);
@@ -80,7 +108,7 @@ int main(int argc,char* argv[]){
   }
 
   printf("[pid: %d] ho ricevuto: %s\n",(int) getpid(),response_buf);
-
+*/
   close(fd);
   printf("\nCLOSED!");
 

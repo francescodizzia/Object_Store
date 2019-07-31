@@ -20,15 +20,12 @@
 #include <parser.h>
 
 
+char *currentUser = NULL;
+
 void *thread_worker(void *arg) {
   long connfd = (long)arg;
 
- //MUST CHANGE!
 
-  /*char header[TEST_SIZE];
-
-  memset(header, '\0', TEST_SIZE);
-*/
   char *header = calloc(MAX_HEADER_SIZE,sizeof(char));
 
   pthread_mutex_lock(&mtx);
@@ -40,7 +37,8 @@ void *thread_worker(void *arg) {
   while(running){
 
 
-  u = readn(connfd, header, MAX_HEADER_SIZE);
+  u = read(connfd, header, MAX_HEADER_SIZE);
+  printf("u: %d\n",u);
 
   if(u == -1)
    printf("ohhh shit here we go again\n");
@@ -48,8 +46,10 @@ void *thread_worker(void *arg) {
   if(u == 0)break;
 
 
- mkdir("./data/user_1/",  0755);
+ //mkdir("./data/user_1/",  0755);
  parse_request(connfd,header);
+// if(currentUser)
+  printf("CurrentUser: %s\n",currentUser);
 
 
 
@@ -57,6 +57,9 @@ void *thread_worker(void *arg) {
 
   free(header);
   close(connfd);
+
+  if(currentUser)
+    free(currentUser);
 
   pthread_mutex_lock(&mtx);
   n_clients--;

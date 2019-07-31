@@ -13,6 +13,7 @@
 #include <pthread.h>
 #include <ctype.h>
 #include <fcntl.h>
+#include <sys/stat.h>
 
 #include <lib.h>
 
@@ -79,7 +80,8 @@ int os_store(char *name, void *block, size_t len) {
   char* buff = calloc(store_size, sizeof(char));
 
   sprintf(buff,"STORE %s %lu \n ",name, len);
-  printf("%d vs %d",store_size,strlen(buff));
+  //printf("%d vs %d",store_size,strlen(buff));
+  printf("\n::%lu\n",len);
 
   writen(fd,buff,store_size);
   writen(fd,block,len);
@@ -92,6 +94,9 @@ int os_store(char *name, void *block, size_t len) {
 int os_connect(char *name) {
   int len = strlen(name);
   int N = len+REGISTER_LENGTH;
+
+  //if NOT REGISTERED
+  //mkdir(getUserPath(name));
 
   char* buff = calloc(N, sizeof(char));
   sprintf(buff,"REGISTER %s \n",name);
@@ -152,8 +157,6 @@ int writen(long fd, void *buf, size_t size) {
 	    if (errno == EINTR) continue;
 	    return -1;
 	 }
-
-   printf("Write r: %ld\n",size);
 
    if(r == 0)
     return 0;

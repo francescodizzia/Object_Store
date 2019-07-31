@@ -16,16 +16,7 @@
 #include <fcntl.h>
 
 #include <lib.h>
-
-
-char currentUser[MAX_USER_SIZE];
-
-void addUser(char* name){
-  //if NOT connected then
-    memset(currentUser, '\0',MAX_USER_SIZE);
-    strcpy(currentUser,name);
-}
-
+#include <thread_worker.h>
 
 
 void parse_request(int c_fd, char *str){
@@ -48,14 +39,24 @@ if(len_s != NULL)  len = atol(len_s);
  if(true){
   ;// printf("Action:%s[%d]|Name:%s[%ld]|len:%ld[%d]\n",action,strlen(action),name,strlen(name),len,getNumberOfDigits(len));
 }
-/*
+
   if(str_equals(action,"REGISTER")){
     char* user_path = getUserPath(name);
     int result = mkdir(user_path,  0755);
     free(user_path);
 
+
+//////////////////////////////////NO THREAD SAFE - MUST FIX! /////////////////////////////
     //if not connected then
-      addUser(name);
+    if(currentUser == NULL){
+      currentUser = calloc(strlen(name)+1,sizeof(char));
+      strcpy(currentUser,name);
+      printf("REGISTERED %s", currentUser);
+      //currentUser = name;
+    // printf("currentUser is %s\n",name);
+    }else{
+      printf("User %s already registered.\n",currentUser);
+    }
 
     if(result == 0){ //Successo nella creazione della dir
       writen(c_fd,"OK \n",MAX_RESPONSE_SIZE);
@@ -71,35 +72,49 @@ if(len_s != NULL)  len = atol(len_s);
     }
     printf("[%d] *fine richiesta*\n\n",c_fd);
   }
-*/
+
   if(str_equals(action,"STORE") ){
-    printf("CIAO\n");
+    printf("CIAO");
     void *data = calloc(len,1);
     int b = MAX_HEADER_SIZE-10-strlen(name)-getNumberOfDigits(len);
-    memcpy(data,newline+2,b);
-    //printf("letti: %d, da leggere: %d\n, letta: %s",b,len-b,(char*)data);
-    int n =readn(c_fd,data+b,len-b);
 
+  //  printf("letti: %d, da leggere: %d\n, letta: %s",b,len-b,(char*)data);
+//    memcpy(data,newline+2,len);
+    //controllo se ho altro da leggere
+
+    int n;
+    if(len-b > 0){
+      memcpy(data,newline+2,b);
+      n = readn(c_fd,data+b,len-b);
+    }else{
+        memcpy(data,newline+2,len);
+    }
     //memcpy(data,(newline+2),len);//+2
-
-
-    int success = createFile(name,data,"user_1",len);
-
-
-    if(success){
-      printf("Stored %p\n\n",data);
-      //write(c_fd,"OK \n",MAX_RESPONSE_SIZE);
-      writen(c_fd,"OK \n",5);
+    if(currentUser == NULL){
+      printf("We got a problem here.\n");
+      write(c_fd,"KO user not registered \n",MAX_RESPONSE_SIZE);
     }
     else{
-      printf("Error storing %p",data);
-      char err_buf[MAX_RESPONSE_SIZE];
-      memset(err_buf,'\0',MAX_RESPONSE_SIZE);
-      sprintf(err_buf,"KO %s (%d) \n",strerror(errno),errno);
 
-      write(c_fd,err_buf,MAX_RESPONSE_SIZE);
+      int success = createFile(name,data,currentUser,len);
+
+
+      if(success){
+        printf("Stored %p\n\n",data);
+        //write(c_fd,"OK \n",MAX_RESPONSE_SIZE);
+        writen(c_fd,"OK \n",5);
+      }
+      else{
+        printf("Error storing %p",data);
+        char err_buf[MAX_RESPONSE_SIZE];
+        memset(err_buf,'\0',MAX_RESPONSE_SIZE);
+        sprintf(err_buf,"KO %s (%d) \n",strerror(errno),errno);
+
+        write(c_fd,err_buf,MAX_RESPONSE_SIZE);
+      }
     }
-   free(data);
+
+    free(data);
   }
 
 }

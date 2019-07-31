@@ -16,9 +16,11 @@ extern int fd;
 #define DEFAULT_CHUNK_SIZE 16
 #define MAX_HEADER_SIZE 128
 
-#define MAX_RESPONSE_SIZE 64
+#define MAX_RESPONSE_SIZE 128
 #define MAX_USER_SIZE 256
 
+#define SYSCALL(r,c,e) \
+    if((r=c)==-1) { perror(e);exit(errno); }
 
 #define ASSERT_NULL(a,e){\
   if(a == NULL){\
