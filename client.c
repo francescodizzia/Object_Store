@@ -39,11 +39,12 @@ void test1(){
   getResponseMsg();
 //  os_connect("utente_prova");
 //  getResponseMsg();
-  os_store("test1","this_one_should_success", strlen("this_one_should_success"));
+  char b[] = "1234567890123456789012345678901234567890_1234567890123456789012345678901234567890_1";
+  os_store("test1",b, strlen(b));
   getResponseMsg();
-  os_store("test2","this one too", strlen("this one too"));
+/*  os_store("test2","this one too", strlen("this one too"));
   getResponseMsg();
-
+*/
 }
 
 

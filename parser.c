@@ -78,7 +78,7 @@ if(len_s != NULL)  len = atol(len_s);
     void *data = calloc(len,1);
     int b = MAX_HEADER_SIZE-10-strlen(name)-getNumberOfDigits(len);
 
-  //  printf("letti: %d, da leggere: %d\n, letta: %s",b,len-b,(char*)data);
+    printf("letti: %d, da leggere: %d\n, letta: %s",b,len-b,(char*)data);
 //    memcpy(data,newline+2,len);
     //controllo se ho altro da leggere
 
