@@ -17,6 +17,8 @@
 
 #include <lib.h>
 #include <thread_worker.h>
+#include <server.h>
+
 
 
 void parse_request(int connfd, char *str){
@@ -43,9 +45,10 @@ if(len_s != NULL)  len = atol(len_s);
 
 
 //////////////////////////////////NO THREAD SAFE - MUST FIX! /////////////////////////////
-    //if not connected then
-    if(currentUser == NULL){
+
+    if(!isInHashTable(HT, currentUser)){
       currentUser = strdup(name);
+      insertHashTable(HT, currentUser);
       printf("REGISTERED %s", currentUser);
     }
     else
@@ -83,7 +86,7 @@ if(len_s != NULL)  len = atol(len_s);
         memcpy(data,(void*)(newline+2),len);
     }
     //memcpy(data,(newline+2),len);//+2
-    if(currentUser == NULL){
+    if(!isInHashTable(HT, currentUser)){
       printf("We got a problem here.\n");
       write(connfd,"KO user not registered \n",MAX_RESPONSE_SIZE);
     }

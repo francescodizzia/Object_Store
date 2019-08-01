@@ -16,6 +16,7 @@
 #include <sys/stat.h>
 
 #include <lib.h>
+#include <hashtable.h>
 
 int fd = -1;
 

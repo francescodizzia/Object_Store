@@ -18,6 +18,7 @@
 #include <lib.h>
 #include <server.h>
 #include <parser.h>
+#include <hashtable.h>
 
 char* currentUser = NULL;
 
@@ -65,6 +66,8 @@ void *thread_worker(void *arg) {
     pthread_cond_signal(&empty);
 
   pthread_mutex_unlock(&mtx);
+
+  printHashTable(HT);
 
   return NULL;
 }

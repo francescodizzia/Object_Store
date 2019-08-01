@@ -17,6 +17,7 @@
 
 #include <lib.h>
 #include <thread_worker.h>
+#include <hashtable.h>
 
 #define MAX_ACTION_LENGTH 9
 #define MAX_NAME_LENGTH 101
@@ -35,6 +36,8 @@ pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t empty;
 
 int n_clients = 0;
+
+hashtable HT;
 
 
 void cleanup() {
@@ -106,6 +109,8 @@ int main(){
 
  int clients = n_clients;
 
+ HT = createHashTable(64);
+
  while(running){
    pthread_mutex_lock(&mtx);
    if(clients != n_clients)
@@ -152,6 +157,7 @@ int main(){
 
  close(fd);
 
+ deleteHashTable(HT);
 
  return 0;
 }

@@ -3,7 +3,7 @@ CFLAGS = -std=c99 -D_POSIX_C_SOURCE=200809L -g -Wall -pedantic -L. -I. #-fsaniti
 SOCKNAME = objstore.sock
 VALGRIND_FLAGS = --leak-check=full --show-leak-kinds=all #-v
 
-SERVER_COMPILE = server.c thread_worker.c parser.c
+SERVER_COMPILE = server.c thread_worker.c parser.c hashtable.c
 
 all: clean dir server client
 

@@ -1,6 +1,9 @@
+#include <hashtable.h>
+
 #if !defined(_SERVER)
 #define _SERVER
 
+extern hashtable HT;
 
 extern pthread_mutex_t mtx;
 extern int n_clients;
