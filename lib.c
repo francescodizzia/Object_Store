@@ -18,14 +18,12 @@
 #include <lib.h>
 
 int fd = -1;
-pthread_mutex_t ready = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t done = PTHREAD_COND_INITIALIZER;
 
 size_t getNumberOfDigits(size_t k){
-	if(k == 0)return 1;
-  if(k < 0){printf("BAKANA\n");return -1;}
-
   int len;
+	if(k == 0)return 1;
+  if(k < 0)return -1;
+
   for(len = 0; k > 0; len++)
     k = k/10;
 
@@ -121,6 +119,11 @@ int os_store(char *name, void *block, size_t len) {
 
  //TODO
 int os_delete(char* name){
+ return true;
+}
+
+int os_disconnect(){
+ close(fd);
  return true;
 }
 

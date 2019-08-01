@@ -44,6 +44,7 @@ bool str_equals(char* a, char* b);
 int os_connect(char *name);
 int os_store(char* name, void* block, size_t len);
 int os_delete(char *name);
+int os_disconnect();
 
 int readn(long fd, void *buf, size_t size);
 int writen(long fd, void *buf, size_t size);

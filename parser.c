@@ -57,14 +57,14 @@ if(len_s != NULL)  len = atol(len_s);
       printf("Invio OK\n");
     }
     else{ //Fallimento
-      printf("Invio FALLIMENTO\n");
+      //printf("Invio FALLIMENTO\n");
       char fail_buf[MAX_RESPONSE_SIZE];
       memset(fail_buf,'\0',MAX_RESPONSE_SIZE);
 
       sprintf(fail_buf,"KO %d \n", errno);
       writen(connfd,fail_buf,MAX_RESPONSE_SIZE);
     }
-    printf("[%d] *fine richiesta*\n\n",connfd);
+  //  printf("[%d] *fine richiesta*\n\n",connfd);
   }
 
   else if(str_equals(action,"STORE") ){
@@ -73,13 +73,13 @@ if(len_s != NULL)  len = atol(len_s);
 
     int n;
     if(len-b > 0){
-      printf("not here");
+    //  printf("not here");
       memcpy(data,(newline+2),b);
       n = readn(connfd, ((char*) data)+b,len-b);
       if(n == 0){printf("too fast buddy");return;}
       if(n == -1){printf("PROBLEMA");}  //TODO
     }else{
-      printf("here\n");
+    //  printf("here\n");
         memcpy(data,(void*)(newline+2),len);
     }
     //memcpy(data,(newline+2),len);//+2

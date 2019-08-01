@@ -19,12 +19,10 @@
 #include <server.h>
 #include <parser.h>
 
-
-char *currentUser = NULL;
+char* currentUser = NULL;
 
 void *thread_worker(void *arg) {
   long connfd = (long)arg;
-
 
   char *header = calloc(MAX_HEADER_SIZE,sizeof(char));
 
@@ -55,10 +53,10 @@ void *thread_worker(void *arg) {
   free(header);
   close(connfd);
 
-
-  if(currentUser != NULL)
+  if(currentUser != NULL){
     free(currentUser);
-
+    currentUser = NULL;
+  }
 
   pthread_mutex_lock(&mtx);
   n_clients--;
