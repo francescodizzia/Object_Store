@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -std=c99 -D_POSIX_C_SOURCE=200809L -g -Wall -pedantic -L. -I. -O3 #-fsanitize=address
+CFLAGS = -std=c99 -D_POSIX_C_SOURCE=200809L -g -Wall -pedantic -L. -I. #-fsanitize=address
 SOCKNAME = objstore.sock
 VALGRIND_FLAGS = --leak-check=full --show-leak-kinds=all #-v
 
@@ -21,7 +21,7 @@ server: $(SERVER_COMPILE) libplug.a
 	$(CC) $(CFLAGS)  $(SERVER_COMPILE) -o $@ -lplug -lpthread
 
 client: client.c libplug.a
-	$(CC) $(CFLAGS) $< -o $@ -lplug
+	$(CC) $(CFLAGS) $< -o $@ -lplug -lpthread
 
 libplug.a: lib.o
 	ar rvs $@ $<

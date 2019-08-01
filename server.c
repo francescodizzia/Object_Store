@@ -150,7 +150,6 @@ int main(){
 
  printf("[+] Tutti i thread sono stati terminati con successo!\n");
 
- //close(conn_fd);
  close(fd);
 
 

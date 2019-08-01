@@ -38,19 +38,16 @@ void *thread_worker(void *arg) {
 
 
   u = read(connfd, header, MAX_HEADER_SIZE);
-  printf("u: %d\n",u);
 
   if(u == -1)
    printf("ohhh shit here we go again\n");
 
   if(u == 0)break;
 
+  parse_request(connfd,header);
 
- //mkdir("./data/user_1/",  0755);
- parse_request(connfd,header);
-// if(currentUser)
   printf("CurrentUser: %s\n",currentUser);
-
+  memset(header,'\0',MAX_HEADER_SIZE);
 
 
   }

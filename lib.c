@@ -18,20 +18,10 @@
 #include <lib.h>
 
 int fd = -1;
+pthread_mutex_t ready = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t done = PTHREAD_COND_INITIALIZER;
 
-#define STORE_LENGTH 10
-#define REGISTER_LENGTH 12
-
-
-ssize_t getChunkSize(ssize_t N){
- ssize_t current_chunk = DEFAULT_CHUNK_SIZE;
- while(current_chunk < N)
-	  current_chunk = current_chunk * 2;
-
- return current_chunk;
-}
-
-size_t getNumberOfDigits(int k){
+size_t getNumberOfDigits(size_t k){
 	if(k == 0)return 1;
   if(k < 0){printf("BAKANA\n");return -1;}
 
@@ -51,6 +41,7 @@ char* getUserPath(char* username){
 }
 
 bool createFile(char* filename, void* data, char* username, size_t size){
+  printf("filename: %s, data: %p, username: %s, size: %lu\n",filename,data,username,size);
  char path[MAX_PATH_SIZE];
  memset(path,'\0',MAX_PATH_SIZE);
  strcpy(path,DATA_DIRECTORY);
@@ -65,7 +56,7 @@ bool createFile(char* filename, void* data, char* username, size_t size){
  if(create_f == -1)
   return false;
 
- int w = write(create_f, data, size);
+ int w = writen(create_f, data, size);
 
  if(w == -1)
   printf("INCREDIBBBILE\n");
@@ -79,7 +70,6 @@ bool getResponseMsg(){
   char response_buf[MAX_RESPONSE_SIZE];
   memset(response_buf, '\0', MAX_RESPONSE_SIZE);
   read(fd,response_buf,MAX_RESPONSE_SIZE);
-  //printf("I got: %s\n",response_buf);
 
   if(strncmp("OK",response_buf,2) == 0)
    return true;
@@ -89,30 +79,25 @@ bool getResponseMsg(){
 
 
 int os_connect(char *name) {
-    struct sockaddr_un serv_addr;
-    int c;
-    fd = socket(AF_UNIX, SOCK_STREAM, 0);
-    memset(&serv_addr, '0', sizeof(serv_addr));
-    serv_addr.sun_family = AF_UNIX;
-    strncpy(serv_addr.sun_path, SOCKNAME, strlen(SOCKNAME)+1);
+  struct sockaddr_un serv_addr;
+  int c;
+  fd = socket(AF_UNIX, SOCK_STREAM, 0);
+  memset(&serv_addr, '0', sizeof(serv_addr));
+  serv_addr.sun_family = AF_UNIX;
+  strncpy(serv_addr.sun_path, SOCKNAME, strlen(SOCKNAME)+1);
 
-    if( (c = connect(fd, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) == -1)
-      return false;
+  if( (c = connect(fd, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) == -1)
+    return false;
 
-  ///////////////////////////////////////////
   int len = strlen(name);
   int N = len+REGISTER_LENGTH;
-
-  //if NOT REGISTERED
-  //mkdir(getUserPath(name));
 
   char* buff = calloc(N, sizeof(char));
   sprintf(buff,"REGISTER %s \n",name);
 
 	int n = writen(fd, buff, N);
-	//writen(fd, block, len);
   free(buff);
-  printf("n:%d\n",n);
+
 	return getResponseMsg();
 }
 
@@ -121,34 +106,57 @@ int os_store(char *name, void *block, size_t len) {
   size_t store_size = STORE_LENGTH + strlen(name) + getNumberOfDigits(len);
   char* buff = calloc(store_size+1, sizeof(char));
 
-  //printf("%s,%d",name,len);
   sprintf(buff,"STORE %s %lu \n ",name, len);
-  //printf("%d vs %d",store_size,strlen(buff));
-  //printf("\n::%lu\n",len);
 
-  write(fd,buff,store_size);
-  write(fd,block,len);
+  char* tmp = calloc(store_size+1+len,sizeof(char));
+  memcpy(tmp,buff,store_size);
+  memcpy(tmp+store_size,block,len);
 
-//  writen(fd,buff,store_size);
-//  writen(fd,block,len);
-  free(buff);
+  writen(fd,tmp,store_size+len+1);
+	free(buff);
+	free(tmp);
 
 	return getResponseMsg();
 }
 
-
-int os_delete(char* name){
  //TODO
-
+int os_delete(char* name){
  return true;
 }
 
 bool str_equals(char* a, char* b){
+ if(a == NULL && b == NULL)
+  return true;
+
  if(a == NULL || b == NULL)
   return false;
 
  return (strcmp(a,b) == 0);
 }
+
+
+bool sendFile(char* src, char* dest){
+  FILE *f = fopen(src, "rb");
+  int d = fileno(f);
+
+  struct stat finfo;
+  fstat(d, &finfo);
+
+  size_t size = finfo.st_size;
+  char *buffer = calloc(size, sizeof(char));
+
+  if(f){
+   fread(buffer, size, 1, f);
+   os_store(dest,buffer, size);
+ 	}
+  else return false;
+
+	fclose(f);
+  free(buffer);
+
+	return true;
+}
+
 
 int readn(long fd, void *buf, size_t size) {
     size_t left = size;

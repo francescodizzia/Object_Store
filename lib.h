@@ -6,6 +6,8 @@
 #define bool int
 
 extern int fd;
+extern pthread_mutex_t ready;
+extern pthread_cond_t done;
 
 #define SOCKNAME "objstore.sock"
 #define MAX_CONN 256
@@ -19,6 +21,9 @@ extern int fd;
 #define MAX_RESPONSE_SIZE 128
 #define MAX_USER_SIZE 256
 
+#define STORE_LENGTH 10
+#define REGISTER_LENGTH 12
+
 #define SYSCALL(r,c,e) \
     if((r=c)==-1) { perror(e);exit(errno); }
 
@@ -30,9 +35,10 @@ extern int fd;
   }\
 }
 
-size_t getNumberOfDigits(int k);
+size_t getNumberOfDigits(size_t k);
 char* getUserPath(char* username);
 bool createFile(char* filename, void* data, char* username, size_t size);
+bool sendFile(char* src, char* dest);
 bool str_equals(char* a, char* b);
 
 int os_connect(char *name);
