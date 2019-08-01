@@ -62,11 +62,10 @@ bool createFile(char* filename, void* data, char* username, size_t size){
 
  int create_f = open(path, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR);
 
-
  if(create_f == -1)
   return false;
 
- int w = writen(create_f, data, size);
+ int w = write(create_f, data, size);
 
  if(w == -1)
   printf("INCREDIBBBILE\n");
@@ -75,23 +74,32 @@ bool createFile(char* filename, void* data, char* username, size_t size){
  return true;
 }
 
-int os_store(char *name, void *block, size_t len) {
-  size_t store_size = STORE_LENGTH + strlen(name) + getNumberOfDigits(len);
-  char* buff = calloc(store_size, sizeof(char));
 
-  sprintf(buff,"STORE %s %lu \n ",name, len);
-  //printf("%d vs %d",store_size,strlen(buff));
-  printf("\n::%lu\n",len);
+bool getResponseMsg(){
+  char response_buf[MAX_RESPONSE_SIZE];
+  memset(response_buf, '\0', MAX_RESPONSE_SIZE);
+  read(fd,response_buf,MAX_RESPONSE_SIZE);
+  //printf("I got: %s\n",response_buf);
 
-  writen(fd,buff,store_size);
-  writen(fd,block,len);
-  free(buff);
+  if(strncmp("OK",response_buf,2) == 0)
+   return true;
 
-	return true;
+ return false;
 }
 
 
 int os_connect(char *name) {
+    struct sockaddr_un serv_addr;
+    int c;
+    fd = socket(AF_UNIX, SOCK_STREAM, 0);
+    memset(&serv_addr, '0', sizeof(serv_addr));
+    serv_addr.sun_family = AF_UNIX;
+    strncpy(serv_addr.sun_path, SOCKNAME, strlen(SOCKNAME)+1);
+
+    if( (c = connect(fd, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) == -1)
+      return false;
+
+  ///////////////////////////////////////////
   int len = strlen(name);
   int N = len+REGISTER_LENGTH;
 
@@ -101,13 +109,32 @@ int os_connect(char *name) {
   char* buff = calloc(N, sizeof(char));
   sprintf(buff,"REGISTER %s \n",name);
 
-	writen(fd, buff, N);
+	int n = writen(fd, buff, N);
 	//writen(fd, block, len);
   free(buff);
-
-	return true;
+  printf("n:%d\n",n);
+	return getResponseMsg();
 }
 
+
+int os_store(char *name, void *block, size_t len) {
+  size_t store_size = STORE_LENGTH + strlen(name) + getNumberOfDigits(len);
+  char* buff = calloc(store_size+1, sizeof(char));
+
+  //printf("%s,%d",name,len);
+  sprintf(buff,"STORE %s %lu \n ",name, len);
+  //printf("%d vs %d",store_size,strlen(buff));
+  //printf("\n::%lu\n",len);
+
+  write(fd,buff,store_size);
+  write(fd,block,len);
+
+//  writen(fd,buff,store_size);
+//  writen(fd,block,len);
+  free(buff);
+
+	return getResponseMsg();
+}
 
 
 int os_delete(char* name){
@@ -117,8 +144,8 @@ int os_delete(char* name){
 }
 
 bool str_equals(char* a, char* b){
- ASSERT_NULL(a,"a is NULL");
- ASSERT_NULL(b,"b is NULL");
+ if(a == NULL || b == NULL)
+  return false;
 
  return (strcmp(a,b) == 0);
 }

@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -std=c99 -D_POSIX_C_SOURCE=200809L -g -Wall -pedantic -L. -I. #-fsanitize=address
+CFLAGS = -std=c99 -D_POSIX_C_SOURCE=200809L -g -Wall -pedantic -L. -I. -O3 #-fsanitize=address
 SOCKNAME = objstore.sock
 VALGRIND_FLAGS = --leak-check=full --show-leak-kinds=all #-v
 

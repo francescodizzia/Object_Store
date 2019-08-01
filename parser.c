@@ -49,8 +49,9 @@ if(len_s != NULL)  len = atol(len_s);
 //////////////////////////////////NO THREAD SAFE - MUST FIX! /////////////////////////////
     //if not connected then
     if(currentUser == NULL){
-      currentUser = calloc(strlen(name)+1,sizeof(char));
-      strcpy(currentUser,name);
+      //currentUser = calloc(strlen(name)+1,sizeof(char));
+      //strcpy(currentUser,name);
+      currentUser = strdup(name);
       printf("REGISTERED %s", currentUser);
       //currentUser = name;
     // printf("currentUser is %s\n",name);
@@ -59,7 +60,8 @@ if(len_s != NULL)  len = atol(len_s);
     }
 
     if(result == 0){ //Successo nella creazione della dir
-      writen(c_fd,"OK \n",MAX_RESPONSE_SIZE);
+      //writen(c_fd,"OK \n",MAX_RESPONSE_SIZE);
+      write(c_fd,"OK \n",5);
       printf("Invio OK\n");
     }
     else{ //Fallimento
@@ -78,14 +80,15 @@ if(len_s != NULL)  len = atol(len_s);
     void *data = calloc(len,1);
     int b = MAX_HEADER_SIZE-10-strlen(name)-getNumberOfDigits(len);
 
-    printf("letti: %d, da leggere: %d\n, letta: %s",b,len-b,(char*)data);
+   printf("letti: %d, da leggere: %d\n, letta: %s",b,len-b,(char*)data);
 //    memcpy(data,newline+2,len);
     //controllo se ho altro da leggere
 
     int n;
     if(len-b > 0){
       memcpy(data,newline+2,b);
-      n = readn(c_fd,data+b,len-b);
+      n = readn(c_fd, ((char*) data)+b,len-b);
+      if(n == -1){printf("PROBLEMA\n");}  //TODO
     }else{
         memcpy(data,newline+2,len);
     }

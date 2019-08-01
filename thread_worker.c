@@ -58,8 +58,10 @@ void *thread_worker(void *arg) {
   free(header);
   close(connfd);
 
-  if(currentUser)
+
+  if(currentUser != NULL)
     free(currentUser);
+
 
   pthread_mutex_lock(&mtx);
   n_clients--;
