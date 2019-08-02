@@ -13,7 +13,7 @@
 #include <lib.h>
 
 bool terminate = false;
-
+bool final = false;
 
 void sigIntHandler(){
  terminate = true;
@@ -31,17 +31,16 @@ void test0(char* user){
  //char users[32];
  char string[] = "Prova 12345";
 
- for(int i = 0; i < 1; i++){
-   //sprintf(users,"user_%d",i);
-   os_connect(user);
 
-   os_store("testo",string,strlen(string));
-   sendFile("./art.gife","./goomba.gif");
-   sendFile("./jojo.jpg","./JoJo.jpg");
+   bool a = os_connect(user);
 
-   os_disconnect();
- }
+   bool b = os_store("testo",string,strlen(string));
+   bool c = sendFile("./art.gife","./goomba.gif");
+   bool d = sendFile("./jojo.jpg","./JoJo.jpg");
 
+   bool e = os_disconnect();
+
+ final = a && b && c && d && e;
 }
 
 int main(int argc,char* argv[]){
@@ -50,7 +49,12 @@ int main(int argc,char* argv[]){
   signal(SIGINT, sigIntHandler);
 
   test0(argv[1]);
-  printf("[%s]: closed!\n",argv[1]);
+
+  if(final)
+    printf("[OK] ");
+  else
+    printf("[KO] ");
+  printf("%s closed.\n",argv[1]);
 
   return 0;
 }

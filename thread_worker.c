@@ -20,13 +20,14 @@
 #include <parser.h>
 #include <hashtable.h>
 
+#define USER_MAX_LENGTH 255
 
 void *thread_worker(void *arg) {
   long connfd = (long)arg;
 
   char *header = calloc(MAX_HEADER_SIZE,sizeof(char));
-  char currentUser[255];
-  memset(currentUser,'\0',255);
+  char currentUser[USER_MAX_LENGTH];
+  memset(currentUser,'\0',USER_MAX_LENGTH);
 
   pthread_mutex_lock(&mtx);
   n_clients++;
@@ -44,7 +45,7 @@ void *thread_worker(void *arg) {
 
   if(u == 0)break;
 
-  bool r = parse_request(connfd,header,currentUser);
+  parse_request(connfd,header,currentUser);
 
 //  printf("r: %d\n",r);
 //  if(r == false)break;
@@ -60,11 +61,14 @@ void *thread_worker(void *arg) {
 
   pthread_mutex_lock(&mtx);
   n_clients--;
+  //HT = removeHashTable(HT,currentUser);
 
   if(n_clients <= 0)
     pthread_cond_signal(&empty);
 
   pthread_mutex_unlock(&mtx);
+
+
 
 
   return NULL;

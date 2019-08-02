@@ -17,6 +17,8 @@
 
 #include <lib.h>
 #include <thread_worker.h>
+#include <hashtable.h>
+
 
 #define MAX_ACTION_LENGTH 9
 #define MAX_NAME_LENGTH 101
@@ -29,12 +31,16 @@ char* OK_RESPONSE = "OK \n";
 #define DEBUG_CMD(c) \
   if(DEBUG_ENABLED) {c;}
 
+#define HASH_TABLE_SIZE 150
 
 volatile sig_atomic_t running = true;
 pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t empty;
 
 int n_clients = 0;
+hashtable HT;
+
+
 
 
 void cleanup() {
@@ -46,14 +52,9 @@ void sigIntHandler(){
  printf("ZA WARUDOOO\n");
 }
 
-void toup(char *str) {
-    char *p = str;
-    while(*p != '\0') {
-        *p = (islower(*p)?toupper(*p):*p);
-	      ++p;
-    }
+void sigUsr1Handler(){
+ printHashTable(HT);
 }
-
 
 
 void spawn_thread(long connfd) {
@@ -89,6 +90,7 @@ int main(){
  //Ignoro SIGPIPE
  signal(SIGPIPE, SIG_IGN);
  signal(SIGINT, sigIntHandler);
+ signal(SIGUSR1, sigUsr1Handler);
 
  int server_fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
@@ -106,8 +108,10 @@ int main(){
 
  int clients = n_clients;
 
+ HT = createHashTable(HASH_TABLE_SIZE);
+
  while(running){
-   
+
    pthread_mutex_lock(&mtx);
    if(clients != n_clients)
      DEBUG_CMD(printf("%d\n",n_clients));
@@ -153,6 +157,9 @@ int main(){
 
  close(server_fd);
 
+ printHashTable(HT);
+
+ freeHashTable(HT);
 
  return 0;
 }

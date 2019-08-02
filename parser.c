@@ -48,6 +48,7 @@ if(len_s != NULL)  len = atol(len_s);
 
     if(currentUser[0] == '\0'){
       strcpy(currentUser,name);
+      HT = insertHashTable(HT,currentUser);
      // insertHashTable(HT, currentUser);
     //  printf("REGISTERED %s", currentUser);
     }

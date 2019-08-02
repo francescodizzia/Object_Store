@@ -47,7 +47,7 @@ bool createFile(char* filename, void* data, char* username, size_t size){
 
  strcat(path,username);
  strcat(path,"/");
- printf("path: %s\n",path);
+ //printf("path: %s\n",path);
  strcat(path,filename);
 
  int create_f = open(path, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR);

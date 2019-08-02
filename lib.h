@@ -31,6 +31,7 @@
   }\
 }
 
+
 size_t getNumberOfDigits(size_t k);
 char* getUserPath(char* username);
 bool createFile(char* filename, void* data, char* username, size_t size);
