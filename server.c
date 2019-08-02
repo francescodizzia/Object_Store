@@ -17,7 +17,6 @@
 
 #include <lib.h>
 #include <thread_worker.h>
-#include <hashtable.h>
 
 #define MAX_ACTION_LENGTH 9
 #define MAX_NAME_LENGTH 101
@@ -36,8 +35,6 @@ pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t empty;
 
 int n_clients = 0;
-
-hashtable HT;
 
 
 void cleanup() {
@@ -93,14 +90,14 @@ int main(){
  signal(SIGPIPE, SIG_IGN);
  signal(SIGINT, sigIntHandler);
 
- int fd = socket(AF_UNIX, SOCK_STREAM, 0);
+ int server_fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
  struct sockaddr_un sa;
  strncpy(sa.sun_path, SOCKNAME, strlen(SOCKNAME)+1);
  sa.sun_family = AF_UNIX;
 
- bind(fd, (struct sockaddr *)&sa, sizeof(sa));
- listen(fd, MAX_CONN);
+ bind(server_fd, (struct sockaddr *)&sa, sizeof(sa));
+ listen(server_fd, MAX_CONN);
 
  int sret,connfd;
 
@@ -109,9 +106,8 @@ int main(){
 
  int clients = n_clients;
 
- HT = createHashTable(64);
-
  while(running){
+   
    pthread_mutex_lock(&mtx);
    if(clients != n_clients)
      DEBUG_CMD(printf("%d\n",n_clients));
@@ -119,12 +115,12 @@ int main(){
    pthread_mutex_unlock(&mtx);
 
    FD_ZERO(&readfds);
-   FD_SET(fd, &readfds);
+   FD_SET(server_fd, &readfds);
 
    timeout.tv_sec = 0;
    timeout.tv_usec = 100000;
 
-   sret = select(fd+1,&readfds, NULL, NULL, &timeout);
+   sret = select(server_fd+1,&readfds, NULL, NULL, &timeout);
 
    if(sret == 0){
      //printf(" timeout\n");
@@ -135,7 +131,7 @@ int main(){
        break;
       }
 
-      connfd = accept(fd, (struct sockaddr*)NULL ,NULL);
+      connfd = accept(server_fd, (struct sockaddr*)NULL ,NULL);
       spawn_thread(connfd);
     }
 
@@ -155,9 +151,8 @@ int main(){
 
  printf("[+] Tutti i thread sono stati terminati con successo!\n");
 
- close(fd);
+ close(server_fd);
 
- deleteHashTable(HT);
 
  return 0;
 }

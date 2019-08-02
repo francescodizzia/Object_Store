@@ -40,7 +40,7 @@ char* getUserPath(char* username){
 }
 
 bool createFile(char* filename, void* data, char* username, size_t size){
-  printf("filename: %s, data: %p, username: %s, size: %lu\n",filename,data,username,size);
+ //printf("filename: %s, data: %p, username: %s, size: %lu\n",filename,data,username,size);
  char path[MAX_PATH_SIZE];
  memset(path,'\0',MAX_PATH_SIZE);
  strcpy(path,DATA_DIRECTORY);
@@ -101,6 +101,27 @@ int os_connect(char *name) {
 }
 
 
+
+int os_store(char *name, void *block, size_t len) {
+  size_t store_size = STORE_LENGTH + strlen(name) + getNumberOfDigits(len);
+  char* buff = calloc(store_size+1, sizeof(char));
+
+  sprintf(buff,"STORE %s %lu \n ",name, len);
+
+  char* tmp = calloc(store_size+1+len,sizeof(char));
+  memcpy(tmp,buff,store_size);
+  memcpy(tmp+store_size,block,len);
+
+  writen(fd,tmp,store_size+len);
+	free(buff);
+	free(tmp);
+
+	return getResponseMsg();
+}
+
+
+
+/*
 int os_store(char *name, void *block, size_t len) {
   size_t store_size = STORE_LENGTH + strlen(name) + getNumberOfDigits(len);
   char* buff = calloc(store_size+1, sizeof(char));
@@ -117,7 +138,7 @@ int os_store(char *name, void *block, size_t len) {
 
 	return getResponseMsg();
 }
-
+*/
  //TODO
 int os_delete(char* name){
  return true;
@@ -125,6 +146,7 @@ int os_delete(char* name){
 
 int os_disconnect(){
  close(fd);
+ fd = -1;
  return true;
 }
 

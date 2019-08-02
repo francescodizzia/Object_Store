@@ -1,15 +1,21 @@
 #include <lib.h>
+#include <pthread.h>
 
-#if !defined(_HASH)
-#define _HASH
+#if !defined(_HASHTABLE)
+#define _HASHTABLE
 
 typedef struct _linkedlist {
   char* name;
   struct _linkedlist *next;
 } linkedlist;
 
+typedef struct _cell {
+  linkedlist* list;
+  pthread_mutex_t mtx;
+} cell;
+
 typedef struct _hashtable{
-  linkedlist** ht;
+  cell *field;
   size_t size;
 } hashtable;
 

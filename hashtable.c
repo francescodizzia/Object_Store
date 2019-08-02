@@ -69,36 +69,61 @@ unsigned long hash(char *str){
     return hash;
 }
 
-hashtable createHashTable(size_t size){
+hashtable createHashTable(size_t N){
   hashtable T;
-  T.ht = calloc(size,sizeof(linkedlist*));
-  T.size = size;
+  //T.ht = calloc(size,sizeof(linkedlist*));
+  T.field = calloc(N,sizeof(cell));
+  T.size = N;
   return T;
 }
 
 hashtable insertHashTable(hashtable T, char* elem){
   unsigned long h = hash(elem) % T.size;
-  T.ht[h] = insertLinkedList(T.ht[h], elem);
+  pthread_mutex_lock(&(T.field[h].mtx));
+  printf("Insert: Entering mutex %lu\n",h);
+
+  T.field[h].list = insertLinkedList(T.field[h].list, elem);
+
+  printf("Insert: Exiting mutex %lu\n",h);
+  pthread_mutex_unlock(&(T.field[h].mtx));
+
   return T;
 }
 
 void printHashTable(hashtable T){
   for(int i = 0; i < T.size; i++){
+    printf("Printf: Entering mutex %d\n",i);
+    pthread_mutex_lock(&(T.field[i].mtx));
     printf("Cella [%d]: ",i);
-    printLinkedList(T.ht[i]);
+    printLinkedList(T.field[i].list);
+
+    pthread_mutex_unlock(&(T.field[i].mtx));
+    printf("Printf: Exiting mutex %d\n",i);
   }
 }
 
 bool isInHashTable(hashtable T, char* name){
   if(name == NULL)return false;
   unsigned long h = hash(name) % T.size;
-  return isInLinkedList(T.ht[h],name);
+
+  printf("IsIn: Entering mutex %lu\n",h);
+  pthread_mutex_lock(&(T.field[h].mtx));
+  bool result = isInLinkedList(T.field[h].list,name);
+  pthread_mutex_unlock(&(T.field[h].mtx));
+  printf("IsIn: Exiting mutex %lu\n",h);
+
+  return result;
 }
 
 void deleteHashTable(hashtable T){
-  for(int i = 0; i < (T.size); i++)
-    freeLinkedList(T.ht[i]);
+  for(int i = 0; i < (T.size); i++){
+    printf("Delete: Entering mutex %d\n",i);
+    pthread_mutex_lock(&(T.field[i].mtx));
+    freeLinkedList(T.field[i].list);
+    pthread_mutex_unlock(&(T.field[i].mtx));
+    printf("Delete: Exiting mutex %d\n",i);
+  }
 
-  free(T.ht);
+  free(T.field);
 //  free(T);
 }

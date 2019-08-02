@@ -1,6 +1,6 @@
 #if !defined(_PARSER)
 #define _PARSER
 
-void parse_request(int c_fd, char *str);
+bool parse_request(int c_fd, char *str, char* currentUser);
 
 #endif

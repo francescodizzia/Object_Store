@@ -21,19 +21,19 @@
 
 
 
-void parse_request(int connfd, char *str){
- if(str == NULL)return;
+bool parse_request(int connfd, char *str,char* currentUser){
+ if(str == NULL)return false;
 
  char *ptr = NULL;
  long int len = 0;
 
  char *action = strtok_r(str, " ", &ptr);
+ if(action == NULL){return false;}
  char *name = strtok_r(NULL, " ", &ptr);
  char* len_s = strtok_r(NULL, " ", &ptr);
  //newline
  char *newline = strtok_r(NULL, " ", &ptr);
 
-if(action == NULL)return;
 
 if(len_s != NULL)  len = atol(len_s);
 
@@ -43,21 +43,21 @@ if(len_s != NULL)  len = atol(len_s);
     int result = mkdir(user_path,  0755);
     free(user_path);
 
-
+    printf("REGISTRO %s\n",name);
 //////////////////////////////////NO THREAD SAFE - MUST FIX! /////////////////////////////
 
-    if(!isInHashTable(HT, currentUser)){
-      currentUser = strdup(name);
-      insertHashTable(HT, currentUser);
-      printf("REGISTERED %s", currentUser);
+    if(currentUser[0] == '\0'){
+      strcpy(currentUser,name);
+     // insertHashTable(HT, currentUser);
+    //  printf("REGISTERED %s", currentUser);
     }
-    else
+    else if(str_equals(currentUser,name)){
       printf("User %s already registered.\n",currentUser);
-
-
+      return false;
+    }
     if(result == 0){ //Successo nella creazione della dir
       write(connfd,"OK \n",5);
-      printf("Invio OK\n");
+      return true;
     }
     else{ //Fallimento
       //printf("Invio FALLIMENTO\n");
@@ -66,6 +66,7 @@ if(len_s != NULL)  len = atol(len_s);
 
       sprintf(fail_buf,"KO %d \n", errno);
       writen(connfd,fail_buf,MAX_RESPONSE_SIZE);
+      return false;
     }
   //  printf("[%d] *fine richiesta*\n\n",connfd);
   }
@@ -79,25 +80,25 @@ if(len_s != NULL)  len = atol(len_s);
     //  printf("not here");
       memcpy(data,(newline+2),b);
       n = readn(connfd, ((char*) data)+b,len-b);
-      if(n == 0){printf("too fast buddy");return;}
-      if(n == -1){printf("PROBLEMA");}  //TODO
-    }else{
-    //  printf("here\n");
-        memcpy(data,(void*)(newline+2),len);
-    }
+      if(n <= 0){printf("PROBLEMA");return false;}  //TODO
+    }else memcpy(data,(void*)(newline+2),len);
+
     //memcpy(data,(newline+2),len);//+2
-    if(!isInHashTable(HT, currentUser)){
+    if(currentUser[0] == '\0'){
       printf("We got a problem here.\n");
       write(connfd,"KO user not registered \n",MAX_RESPONSE_SIZE);
+      return false;
     }
     else{
 
       int success = createFile(name,data,currentUser,len);
 
       if(success){
-        printf("Stored %p\n\n",data);
+        //printf("Stored %p\n\n",data);
         //write(c_fd,"OK \n",MAX_RESPONSE_SIZE);
         writen(connfd,"OK \n",5);
+        free(data);
+        return true;
       }
       else{
         printf("Error storing %p",data);
@@ -106,6 +107,7 @@ if(len_s != NULL)  len = atol(len_s);
         sprintf(err_buf,"KO %s (%d) \n",strerror(errno),errno);
 
         write(connfd,err_buf,MAX_RESPONSE_SIZE);
+        return false;
       }
 
     }
@@ -114,4 +116,5 @@ if(len_s != NULL)  len = atol(len_s);
 
   }
 
+  return true;
 }

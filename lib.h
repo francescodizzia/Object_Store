@@ -5,10 +5,6 @@
 #define false 0
 #define bool int
 
-extern int fd;
-extern pthread_mutex_t ready;
-extern pthread_cond_t done;
-
 #define SOCKNAME "objstore.sock"
 #define MAX_CONN 256
 
