@@ -1,5 +1,5 @@
-#if !defined(_SOCKET)
-#define _SOCKET
+#if !defined(_OBJECT_STORE)
+#define _OBJECT_STORE
 
 #define true 1
 #define false 0
@@ -11,7 +11,6 @@
 #define MAX_PATH_SIZE 4096
 #define DATA_DIRECTORY "./data/"
 
-#define DEFAULT_CHUNK_SIZE 16
 #define MAX_HEADER_SIZE 128
 
 #define MAX_RESPONSE_SIZE 128
@@ -47,4 +46,4 @@ int readn(long fd, void *buf, size_t size);
 int writen(long fd, void *buf, size_t size);
 
 
-#endif // _SOCKET
+#endif

@@ -31,13 +31,10 @@ void test0(char* user){
  //char users[32];
  char string[] = "Prova 12345";
 
-
    bool a = os_connect(user);
-
    bool b = os_store("testo",string,strlen(string));
    bool c = sendFile("./art.gife","./goomba.gif");
    bool d = sendFile("./jojo.jpg","./JoJo.jpg");
-
    bool e = os_disconnect();
 
  final = a && b && c && d && e;

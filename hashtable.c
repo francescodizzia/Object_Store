@@ -20,9 +20,8 @@
 
 linkedlist *insertLinkedList(linkedlist *head, char* name){
   linkedlist *new = calloc(1,sizeof(linkedlist));
-  new->name = strdup(name);
-  /*new->name = calloc(strlen(name)+1,sizeof(char));
-  strcpy(new->name,name);*/
+  new->name = calloc(strlen(name)+1,sizeof(char));
+  strcpy(new->name,name);
   new->next = head;
 
   return new;
@@ -81,7 +80,9 @@ void freeLinkedList(linkedlist *head){
     tmp = curr;
     curr = curr->next;
     free(tmp->name);
+    tmp->name = NULL;
     free(tmp);
+    tmp = NULL;
   }
   head = NULL;
 }
@@ -161,6 +162,7 @@ void freeHashTable(hashtable T){
   //  DEBUG_PRINT("Delete: Entering mutex %d\n",i);
     pthread_mutex_lock(&(T.field[i].mtx));
     freeLinkedList(T.field[i].list);
+    //free(T.field[i]);
     pthread_mutex_unlock(&(T.field[i].mtx));
   //  DEBUG_PRINT("Delete: Exiting mutex %d\n",i);
   }

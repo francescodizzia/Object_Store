@@ -20,6 +20,17 @@
 #include <server.h>
 
 
+bool sendOK(int connfd){
+  int w = writen(connfd,"OK \n",4);
+  if(w < 0)return false;
+  return true;
+}
+
+void leave(int connfd, char* currentUser){
+  HT = removeHashTable(HT,currentUser);
+  sendOK(connfd);
+}
+
 
 bool parse_request(int connfd, char *str,char* currentUser){
  if(str == NULL)return false;
@@ -44,24 +55,20 @@ if(len_s != NULL)  len = atol(len_s);
     free(user_path);
 
     printf("REGISTRO %s\n",name);
-//////////////////////////////////NO THREAD SAFE - MUST FIX! /////////////////////////////
 
     if(currentUser[0] == '\0'){
       strcpy(currentUser,name);
       HT = insertHashTable(HT,currentUser);
-     // insertHashTable(HT, currentUser);
-    //  printf("REGISTERED %s", currentUser);
     }
     else if(str_equals(currentUser,name)){
       printf("User %s already registered.\n",currentUser);
-      return false;
+      return false; //TODO FIX
     }
     if(result == 0){ //Successo nella creazione della dir
-      write(connfd,"OK \n",5);
+      writen(connfd,"OK \n",4);
       return true;
     }
-    else{ //Fallimento
-      //printf("Invio FALLIMENTO\n");
+    else{ //FAIL
       char fail_buf[MAX_RESPONSE_SIZE];
       memset(fail_buf,'\0',MAX_RESPONSE_SIZE);
 
@@ -78,7 +85,6 @@ if(len_s != NULL)  len = atol(len_s);
 
     int n;
     if(len-b > 0){
-    //  printf("not here");
       memcpy(data,(newline+2),b);
       n = readn(connfd, ((char*) data)+b,len-b);
       if(n <= 0){printf("PROBLEMA");return false;}  //TODO
@@ -97,7 +103,7 @@ if(len_s != NULL)  len = atol(len_s);
       if(success){
         //printf("Stored %p\n\n",data);
         //write(c_fd,"OK \n",MAX_RESPONSE_SIZE);
-        writen(connfd,"OK \n",5);
+        writen(connfd,"OK \n",4);
         free(data);
         return true;
       }
@@ -115,6 +121,8 @@ if(len_s != NULL)  len = atol(len_s);
 
     free(data);
 
+  }else if(str_equals(action,"LEAVE")){
+    leave(connfd, currentUser);
   }
 
   return true;

@@ -53,22 +53,27 @@ void *thread_worker(void *arg) {
 //  printf("CurrentUser: %s\n",currentUser);
   memset(header,'\0',MAX_HEADER_SIZE);
 
-
+/*
+  if(str_equals(currentUser,"user_90") || str_equals(currentUser,"user_99")){
+    while(true)
+     ;
+  }
+*/
   }
 
   free(header);
   close(connfd);
 
+
+
   pthread_mutex_lock(&mtx);
   n_clients--;
-  //HT = removeHashTable(HT,currentUser);
+//  HT = removeHashTable(HT,currentUser);
 
   if(n_clients <= 0)
     pthread_cond_signal(&empty);
 
   pthread_mutex_unlock(&mtx);
-
-
 
 
   return NULL;

@@ -144,11 +144,16 @@ int os_delete(char* name){
  return true;
 }
 
+
 int os_disconnect(){
+ writen(fd, "LEAVE \n", 7);
+ bool response = getResponseMsg();
  close(fd);
  fd = -1;
- return true;
+
+ return response;
 }
+
 
 bool str_equals(char* a, char* b){
  if(a == NULL && b == NULL)

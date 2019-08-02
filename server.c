@@ -49,7 +49,10 @@ void cleanup() {
 
 void sigIntHandler(){
  running = false;
- printf("ZA WARUDOOO\n");
+ printf("ZA WARUDOOO\n\n");
+
+
+  printHashTable(HT);
 }
 
 void sigUsr1Handler(){
@@ -156,8 +159,6 @@ int main(){
  printf("[+] Tutti i thread sono stati terminati con successo!\n");
 
  close(server_fd);
-
- printHashTable(HT);
 
  freeHashTable(HT);
 
