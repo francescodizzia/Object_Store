@@ -20,8 +20,7 @@
 
 linkedlist *insertLinkedList(linkedlist *head, char* name){
   linkedlist *new = calloc(1,sizeof(linkedlist));
-  new->name = calloc(strlen(name)+1,sizeof(char));
-  strcpy(new->name,name);
+  new->name = strdup(name);
   new->next = head;
 
   return new;
