@@ -55,7 +55,9 @@ linkedlist *removeLinkedList(linkedlist* head, char* target){
       if(prec == NULL){
         head = curr->next;
         free(curr->name);
+        curr->name = NULL;
         free(curr);
+        curr = NULL;
         return head;
       }
       else{
