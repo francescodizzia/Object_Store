@@ -16,20 +16,6 @@
 #define MAX_RESPONSE_SIZE 128
 #define MAX_USER_SIZE 256
 
-#define STORE_LENGTH 10
-#define REGISTER_LENGTH 12
-
-#define SYSCALL(r,c,e) \
-    if((r=c)==-1) { perror(e);exit(errno); }
-
-#define ASSERT_NULL(a,e){\
-  if(a == NULL){\
-   perror(e);\
-   printf("%s\n",e);\
-   return false;\
-  }\
-}
-
 
 size_t getNumberOfDigits(size_t k);
 char* getUserPath(char* username);

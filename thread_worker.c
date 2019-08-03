@@ -25,7 +25,7 @@
 void *thread_worker(void *arg) {
   long connfd = (long)arg;
 
-  char *header = calloc(MAX_HEADER_SIZE,sizeof(char));
+  char *header = calloc(MAX_HEADER_SIZE, sizeof(char));
   char currentUser[USER_MAX_LENGTH];
   memset(currentUser,'\0',USER_MAX_LENGTH);
 
@@ -47,10 +47,6 @@ void *thread_worker(void *arg) {
 
   parse_request(connfd,header,currentUser);
 
-//  printf("r: %d\n",r);
-//  if(r == false)break;
-
-//  printf("CurrentUser: %s\n",currentUser);
   memset(header,'\0',MAX_HEADER_SIZE);
 
 /*
@@ -68,7 +64,6 @@ void *thread_worker(void *arg) {
 
   pthread_mutex_lock(&mtx);
   n_clients--;
-//  HT = removeHashTable(HT,currentUser);
 
   if(n_clients <= 0)
     pthread_cond_signal(&empty);

@@ -28,16 +28,30 @@ void printBool(int b){
 }
 
 void test0(char* user){
- //char users[32];
  char string[] = "Prova 12345";
 
    bool a = os_connect(user);
    bool b = os_store("testo",string,strlen(string));
    bool c = sendFile("./art.gife","./goomba.gif");
    bool d = sendFile("./jojo.jpg","./JoJo.jpg");
+   bool z = true;
+
+   if(strcmp(user,"user_88") == 0){
+   z = sendFile("./art.gife","./JoJo.jpg");
+   //z = sendFile("./Object1","./JoJo.jpg");
+  }
+
+
+/*
+   if(str_equals(user, "user_90") || str_equals(user, "user_10"))
+      z = os_delete("JoJo.jpg");
+
+   if(str_equals(user, "user_100"))
+      os_delete("../user_1/JoJo.jpg");
+*/
    bool e = os_disconnect();
 
- final = a && b && c && d && e;
+ final = a && b && c && d && e && z;
 }
 
 int main(int argc,char* argv[]){

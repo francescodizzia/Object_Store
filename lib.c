@@ -18,7 +18,13 @@
 #include <lib.h>
 #include <hashtable.h>
 
-int fd = -1;
+#define FD_NULL (-1)
+
+int fd = FD_NULL;
+
+#define STORE_LENGTH 10
+#define REGISTER_LENGTH 12 //include \0, gli altri no
+#define DELETE_LENGTH 9
 
 size_t getNumberOfDigits(size_t k){
   int len;
@@ -33,14 +39,13 @@ size_t getNumberOfDigits(size_t k){
 
 
 char* getUserPath(char* username){
-  char* path = calloc(MAX_PATH_SIZE,sizeof(char));
-  sprintf(path,"%s%s/",DATA_DIRECTORY,username);
+  char* path = calloc(MAX_PATH_SIZE, sizeof(char));
+  sprintf(path,"%s%s/",DATA_DIRECTORY, username);
 
   return path;
 }
 
 bool createFile(char* filename, void* data, char* username, size_t size){
- //printf("filename: %s, data: %p, username: %s, size: %lu\n",filename,data,username,size);
  char path[MAX_PATH_SIZE];
  memset(path,'\0',MAX_PATH_SIZE);
  strcpy(path,DATA_DIRECTORY);
@@ -50,17 +55,21 @@ bool createFile(char* filename, void* data, char* username, size_t size){
  //printf("path: %s\n",path);
  strcat(path,filename);
 
- int create_f = open(path, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR);
+ int new_fd = open(path, O_CREAT | O_WRONLY | O_TRUNC, S_IRUSR | S_IWUSR);
+ //open(path, O_CREAT | O_EXCL | O_WRONLY, 0644);
 
- if(create_f == -1)
+ if(new_fd < 0)
   return false;
 
- int w = writen(create_f, data, size);
+ int w = writen(new_fd, data, size);
 
- if(w == -1)
+ if(w == -1){
   printf("INCREDIBBBILE\n");
+  return false;
+}
 
- close(create_f);
+
+ close(new_fd);
  return true;
 }
 
@@ -89,7 +98,7 @@ int os_connect(char *name) {
     return false;
 
   int len = strlen(name);
-  int N = len+REGISTER_LENGTH;
+  int N = len + REGISTER_LENGTH;
 
   char* buff = calloc(N, sizeof(char));
   sprintf(buff,"REGISTER %s \n",name);
@@ -139,9 +148,17 @@ int os_store(char *name, void *block, size_t len) {
 	return getResponseMsg();
 }
 */
+
  //TODO
 int os_delete(char* name){
- return true;
+  int N = strlen(name) + DELETE_LENGTH + 1;
+  char* buff = calloc(N, sizeof(char));
+  sprintf(buff,"DELETE %s \n",name);
+
+  writen(fd, buff, N-1);
+  free(buff);
+
+ return getResponseMsg();
 }
 
 
@@ -149,7 +166,7 @@ int os_disconnect(){
  writen(fd, "LEAVE \n", 7);
  bool response = getResponseMsg();
  close(fd);
- fd = -1;
+ fd = FD_NULL;
 
  return response;
 }
