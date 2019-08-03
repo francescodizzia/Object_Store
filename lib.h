@@ -12,9 +12,7 @@
 #define DATA_DIRECTORY "./data/"
 
 #define MAX_HEADER_SIZE 128
-
 #define MAX_RESPONSE_SIZE 128
-#define MAX_USER_SIZE 256
 
 
 size_t getNumberOfDigits(size_t k);
@@ -25,6 +23,7 @@ bool str_equals(char* a, char* b);
 
 int os_connect(char *name);
 int os_store(char* name, void* block, size_t len);
+void *os_retrieve(char* name);
 int os_delete(char *name);
 int os_disconnect();
 

@@ -37,7 +37,8 @@ void test0(char* user){
    bool z = true;
 
    if(strcmp(user,"user_88") == 0){
-   z = sendFile("./art.gife","./JoJo.jpg");
+     void* block = os_retrieve("goomba.gif");
+     os_store("copy.gif",block,261);
    //z = sendFile("./Object1","./JoJo.jpg");
   }
 

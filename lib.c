@@ -22,9 +22,12 @@
 
 int fd = FD_NULL;
 
-#define STORE_LENGTH 10
+
 #define REGISTER_LENGTH 12 //include \0, gli altri no
+#define STORE_LENGTH 10
+#define RETRIEVE_LENGTH 11
 #define DELETE_LENGTH 9
+#define DATA_MSG_LENGTH 7
 
 size_t getNumberOfDigits(size_t k){
   int len;
@@ -64,7 +67,7 @@ bool createFile(char* filename, void* data, char* username, size_t size){
  int w = writen(new_fd, data, size);
 
  if(w == -1){
-  printf("INCREDIBBBILE\n");
+  printf("INCREDIBBBILE\n"); //TODO
   return false;
 }
 
@@ -83,6 +86,39 @@ bool getResponseMsg(){
    return true;
 
  return false;
+}
+
+//TODO
+void *getDataResponseMsg(){
+  char response_buf[MAX_RESPONSE_SIZE];
+  memset(response_buf, '\0', MAX_RESPONSE_SIZE);
+  read(fd,response_buf,MAX_RESPONSE_SIZE);
+
+  char* ptr = NULL;
+  long int len = 0;
+  char* first_str =  strtok_r(response_buf, " ", &ptr);
+
+  if(first_str == NULL || strcmp(first_str,"KO") == 0)
+    return NULL;
+
+  char* len_str =  strtok_r(NULL, " ", &ptr);
+  char* newline = strtok_r(NULL, " ", &ptr);
+
+  if(len_str != NULL) len = atol(len_str);
+
+
+  void *data = calloc(len,1);
+  int b = MAX_RESPONSE_SIZE-DATA_MSG_LENGTH-getNumberOfDigits(len);
+
+  int n;
+  if(len-b > 0){
+    memcpy(data,(newline+1),b);
+    n = readn(fd, ((char*) data)+b,len-b);
+    if(n <= 0){printf("PROBLEMA");return NULL;}  //TODO
+  }
+  else memcpy(data,(void*)(newline+1),len);
+
+ return data;
 }
 
 
@@ -108,7 +144,6 @@ int os_connect(char *name) {
 
 	return getResponseMsg();
 }
-
 
 
 int os_store(char *name, void *block, size_t len) {
@@ -149,11 +184,21 @@ int os_store(char *name, void *block, size_t len) {
 }
 */
 
- //TODO
+void *os_retrieve(char* name){
+  int N = strlen(name) + RETRIEVE_LENGTH + 1;
+  char* buff = calloc(N, sizeof(char));
+  sprintf(buff, "RETRIEVE %s \n", name);
+
+  writen(fd, buff, N-1);
+  free(buff);
+
+  return getDataResponseMsg();
+}
+
 int os_delete(char* name){
   int N = strlen(name) + DELETE_LENGTH + 1;
   char* buff = calloc(N, sizeof(char));
-  sprintf(buff,"DELETE %s \n",name);
+  sprintf(buff,"DELETE %s \n", name);
 
   writen(fd, buff, N-1);
   free(buff);

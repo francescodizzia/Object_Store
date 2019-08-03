@@ -24,7 +24,7 @@
 
 void sendOK(int connfd, char* currentUser, char* operation){
   writen(connfd,"OK \n",4);
-  fprintf(target_output,"[user: %-15sop: %-10s\tOK \n",currentUser,operation);
+  fprintf(target_output,"user: %-15sop: %-10s\tOK \n",currentUser,operation);
 }
 
 
@@ -33,13 +33,13 @@ void sendKO(int connfd, char* currentUser, char* operation){
   memset(fail_buf,'\0',MAX_RESPONSE_SIZE);
   sprintf(fail_buf,"KO %d (%s) \n", errno, strerror(errno));
   writen(connfd,fail_buf,strlen(fail_buf));
-  fprintf(target_output,"[user: %-15sop: %-10s\t%s",currentUser,operation,fail_buf);
+  fprintf(target_output,"user: %-15sop: %-10s\t%s",currentUser,operation,fail_buf);
 }
 
 
 void sendKO_custom(int connfd, char* currentUser, char* operation, char* message){
   writen(connfd,message,strlen(message));
-    fprintf(target_output,"[user: %-15sop: %-10s\t%s",currentUser,operation,message);
+    fprintf(target_output,"user: %-15sop: %-10s\t%s",currentUser,operation,message);
 }
 
 
@@ -101,6 +101,46 @@ void store(int connfd, char* currentUser ,char* name, long int len, char* newlin
   free(data);
 }
 
+void retrieve(int connfd, char* currentUser, char* name){
+  char* user_path = getUserPath(currentUser);
+  char* file_path = calloc(strlen(user_path)+strlen(name)+1 ,sizeof(char));
+  strcat(file_path,user_path);
+  strcat(file_path,name);
+
+  FILE *f = fopen(file_path, "rb");
+  int d = fileno(f);
+
+  free(user_path);
+  free(file_path);
+
+  struct stat finfo;
+  fstat(d, &finfo);
+
+  size_t size = finfo.st_size;
+  void *block = calloc(size, 1);
+
+  if(f){
+   fread(block, size, 1, f);
+   int N = 7 + getNumberOfDigits(size);
+   char* buff = calloc(N+ 1, sizeof(char));
+
+   sprintf(buff,"DATA %lu \n ", size);
+
+   char* tmp = calloc(N+1+size,sizeof(char));
+   memcpy(tmp,buff,N);
+   memcpy(tmp+N,block,size);
+
+   writen(connfd,tmp,N+size);
+   free(buff);
+   free(tmp);
+ 	}
+  else return;
+
+	fclose(f);
+  free(block);
+}
+
+
 void delete(int connfd, char* currentUser, char* name){
   char* user_path = getUserPath(currentUser);
   char* file_path = calloc(strlen(user_path)+strlen(name)+1 ,sizeof(char));
@@ -120,24 +160,26 @@ void delete(int connfd, char* currentUser, char* name){
 void parse_request(int connfd, char *str,char* currentUser){
  if(str == NULL)return;
 
- char *ptr = NULL;
+ char* ptr = NULL;
  long int len = 0;
 
- char *operation = strtok_r(str, " ", &ptr);
+ char* operation = strtok_r(str, " ", &ptr);
  if(operation == NULL)return;
- char *name = strtok_r(NULL, " ", &ptr);
- char* len_s = strtok_r(NULL, " ", &ptr);
- char *newline = strtok_r(NULL, " ", &ptr);
+ char* name = strtok_r(NULL, " ", &ptr);
+ char* len_str = strtok_r(NULL, " ", &ptr);
+ char* newline = strtok_r(NULL, " ", &ptr);
 
 
- if(len_s != NULL)
-    len = atol(len_s);
+ if(len_str != NULL)
+    len = atol(len_str);
 
 
   if(str_equals(operation, "REGISTER"))
     login(connfd, currentUser, name);
   else if(str_equals(operation, "STORE"))
     store(connfd, currentUser, name, len, newline);
+  else if(str_equals(operation, "RETRIEVE"))
+    retrieve(connfd, currentUser, name);
   else if(str_equals(operation, "DELETE"))
     delete(connfd, currentUser, name);
   else if(str_equals(operation, "LEAVE"))
