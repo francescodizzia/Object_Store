@@ -14,6 +14,7 @@
 #include <ctype.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <stdbool.h>
 
 #include <lib.h>
 #include <hashtable.h>
@@ -139,14 +140,18 @@ int os_connect(char *name) {
   char* buff = calloc(N, sizeof(char));
   sprintf(buff,"REGISTER %s \n",name);
 
-	int n = writen(fd, buff, N);
+	int n = write(fd, buff, N);
   free(buff);
+
+  if(n < 0)return false;
 
 	return getResponseMsg();
 }
 
 
 int os_store(char *name, void *block, size_t len) {
+  if(block == NULL || len <= 0 )return false;
+
   size_t store_size = STORE_LENGTH + strlen(name) + getNumberOfDigits(len);
   char* buff = calloc(store_size+1, sizeof(char));
 
@@ -163,26 +168,6 @@ int os_store(char *name, void *block, size_t len) {
 	return getResponseMsg();
 }
 
-
-
-/*
-int os_store(char *name, void *block, size_t len) {
-  size_t store_size = STORE_LENGTH + strlen(name) + getNumberOfDigits(len);
-  char* buff = calloc(store_size+1, sizeof(char));
-
-  sprintf(buff,"STORE %s %lu \n ",name, len);
-
-  char* tmp = calloc(store_size+1+len,sizeof(char));
-  memcpy(tmp,buff,store_size);
-  memcpy(tmp+store_size,block,len);
-
-  writen(fd,tmp,store_size+len+1);
-	free(buff);
-	free(tmp);
-
-	return getResponseMsg();
-}
-*/
 
 void *os_retrieve(char* name){
   int N = strlen(name) + RETRIEVE_LENGTH + 1;
@@ -208,10 +193,14 @@ int os_delete(char* name){
 
 
 int os_disconnect(){
- writen(fd, "LEAVE \n", 7);
+ int w = writen(fd, "LEAVE \n", 7);
+ if(w == -1)return false;
+
  bool response = getResponseMsg();
- close(fd);
+ int c = close(fd);
  fd = FD_NULL;
+
+ if(c == -1)return false;
 
  return response;
 }
@@ -230,24 +219,25 @@ bool str_equals(char* a, char* b){
 
 bool sendFile(char* src, char* dest){
   FILE *f = fopen(src, "rb");
-  int d = fileno(f);
-
-  struct stat finfo;
-  fstat(d, &finfo);
-
-  size_t size = finfo.st_size;
-  char *buffer = calloc(size, sizeof(char));
+  bool result = false;
 
   if(f){
+   int d = fileno(f);
+
+   if(d == -1)return false;
+
+   struct stat finfo;
+   fstat(d, &finfo);
+
+   size_t size = finfo.st_size;
+   char *buffer = calloc(size, sizeof(char));
    fread(buffer, size, 1, f);
-   os_store(dest,buffer, size);
+   result = os_store(dest,buffer, size);
+   free(buffer);
+   fclose(f);
  	}
-  else return false;
 
-	fclose(f);
-  free(buffer);
-
-	return true;
+	return result;
 }
 
 

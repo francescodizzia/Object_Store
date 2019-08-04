@@ -11,6 +11,7 @@
 #include <pthread.h>
 #include <sys/stat.h>
 #include <lib.h>
+#include <stdbool.h>
 
 bool terminate = false;
 bool final = false;
@@ -36,12 +37,12 @@ void test0(char* user){
    bool d = sendFile("./jojo.jpg","./JoJo.jpg");
    bool z = true;
 
+/*
    if(strcmp(user,"user_88") == 0){
      void* block = os_retrieve("goomba.gif");
      os_store("copy.gif",block,261);
-   //z = sendFile("./Object1","./JoJo.jpg");
   }
-
+*/
 
 /*
    if(str_equals(user, "user_90") || str_equals(user, "user_10"))

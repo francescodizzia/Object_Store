@@ -24,14 +24,14 @@
 #define MAX_NAME_LENGTH 101
 
 #define DEBUG_ENABLED 0
+#define HASH_TABLE_SIZE SOMAXCONN
 
-char* OK_RESPONSE = "OK \n";
 
 
 #define DEBUG_CMD(c) \
   if(DEBUG_ENABLED) {c;}
 
-#define HASH_TABLE_SIZE 150
+
 
 volatile sig_atomic_t running = true;
 pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
@@ -52,11 +52,11 @@ void sigIntHandler(){
  printf("ZA WARUDOOO\n\n");
 
 
-  printHashTable(HT);
+
 }
 
 void sigUsr1Handler(){
- printHashTable(HT);
+ //printHashTable(HT);
 }
 
 
@@ -114,13 +114,13 @@ int main(){
  HT = createHashTable(HASH_TABLE_SIZE);
 
  while(running){
-
+   /*
    pthread_mutex_lock(&mtx);
    if(clients != n_clients)
      DEBUG_CMD(printf("%d\n",n_clients));
    clients = n_clients;
    pthread_mutex_unlock(&mtx);
-
+   */
    FD_ZERO(&readfds);
    FD_SET(server_fd, &readfds);
 
@@ -147,6 +147,8 @@ int main(){
 }
 
 
+  printHashTable(HT);
+
   pthread_mutex_lock(&mtx);
   if(n_clients > 0){
    printf("[X] WAITING FOR THE THREADS\n");
@@ -155,12 +157,10 @@ int main(){
   }
   pthread_mutex_unlock(&mtx);
 
+  freeHashTable(&HT);
+  close(server_fd);
 
- printf("[+] Tutti i thread sono stati terminati con successo!\n");
+  printf("[+] Tutti i thread sono stati terminati con successo!\n");
 
- close(server_fd);
-
- freeHashTable(HT);
-
- return 0;
+  return 0;
 }

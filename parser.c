@@ -24,52 +24,56 @@
 
 void sendOK(int connfd, char* currentUser, char* operation){
   writen(connfd,"OK \n",4);
-  fprintf(target_output,"user: %-15sop: %-10s\tOK \n",currentUser,operation);
+  fprintf(target_output,"user %-15s fd: %-10dop: %-10s\tOK \n",  currentUser, connfd, operation);
 }
 
+void sendKO(int connfd, char* currentUser, char* operation, char* message){
+  char* toPrint = NULL;
 
-void sendKO(int connfd, char* currentUser, char* operation){
+  if(message == NULL)
+    toPrint = strerror(errno);
+  else toPrint = message;
+
   char fail_buf[MAX_RESPONSE_SIZE];
   memset(fail_buf,'\0',MAX_RESPONSE_SIZE);
-  sprintf(fail_buf,"KO %d (%s) \n", errno, strerror(errno));
+
+  sprintf(fail_buf,"KO [%s] \n", toPrint);
   writen(connfd,fail_buf,strlen(fail_buf));
-  fprintf(target_output,"user: %-15sop: %-10s\t%s",currentUser,operation,fail_buf);
-}
-
-
-void sendKO_custom(int connfd, char* currentUser, char* operation, char* message){
-  writen(connfd,message,strlen(message));
-    fprintf(target_output,"user: %-15sop: %-10s\t%s",currentUser,operation,message);
+  fprintf(target_output,"user %-15s fd: %-10dop: %-10s\t%s",currentUser, connfd,operation,fail_buf);
 }
 
 
 void leave(int connfd, char* currentUser){
-  HT = removeHashTable(HT,currentUser);
-  sendOK(connfd,currentUser,"LEAVE");
+  //removeHashTable(&HT,currentUser);
+  sendOK(connfd, currentUser, "LEAVE");
 }
 
 
 void register_(int connfd, char* currentUser, char* name){
+
+  if(isInHashTable(HT,name)){
+    sendKO(connfd,name,"REGISTER","Multiple clients with the same username");
+    return;
+  }
+
+  if(currentUser[0] == '\0'){
+    strcpy(currentUser,name);
+    insertHashTable(&HT,currentUser);
+  }
+
+
   char* user_path = getUserPath(name);
   int result = mkdir(user_path,  0755);
   free(user_path);
 
 
-  if(currentUser[0] == '\0'){
-    strcpy(currentUser,name);
-    HT = insertHashTable(HT,currentUser);
-  }
-  else if(str_equals(currentUser,name)){
-    printf("User %s already registered.\n",currentUser);
-    return ; //TODO FIX
-  }
   if(result == 0) //Successo nella creazione della dir
-    sendOK(connfd,currentUser,"REGISTER");
+    sendOK(connfd, currentUser, "REGISTER");
   else{
-    if(errno == EEXIST)
-      sendOK(connfd,currentUser,"REGISTER");
+    if(errno == EEXIST) //La directory esiste gia', ma non e' un problema
+      sendOK(connfd, currentUser, "REGISTER");
     else
-      sendKO(connfd,currentUser,"REGISTER");
+      sendKO(connfd, currentUser, "REGISTER", NULL);
   }
 
 }
@@ -87,13 +91,13 @@ void store(int connfd, char* currentUser ,char* name, long int len, char* newlin
   else memcpy(data,(void*)(newline+2),len);
 
   if(currentUser[0] == '\0')
-    sendKO_custom(connfd,currentUser,"STORE","KO User not registered \n");
+    sendKO(connfd, currentUser, "STORE", "User not registered");
   else{
     int success = createFile(name,data,currentUser,len);
     if(success)
-      sendOK(connfd,currentUser,"STORE");
+      sendOK(connfd, currentUser, "STORE");
     else
-      sendKO(connfd,currentUser,"STORE");
+      sendKO(connfd, currentUser, "STORE", NULL);
   }
 
   free(data);
@@ -129,13 +133,12 @@ void retrieve(int connfd, char* currentUser, char* name){
    memcpy(tmp+N,block,size);
 
    writen(connfd,tmp,N+size);
+
    free(buff);
    free(tmp);
+   free(block);
+   fclose(f);
  	}
-  else return;
-
-	fclose(f);
-  free(block);
 }
 
 
@@ -150,8 +153,8 @@ void delete(int connfd, char* currentUser, char* name){
   free(user_path);
   free(file_path);
 
-  if(success) sendOK(connfd,currentUser,"DELETE");
-  else sendKO(connfd,currentUser,"DELETE");
+  if(success) sendOK(connfd, currentUser, "DELETE");
+  else sendKO(connfd, currentUser, "DELETE", NULL);
 }
 
 

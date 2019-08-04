@@ -1,9 +1,7 @@
+#include <stdbool.h>
+
 #if !defined(_OBJECT_STORE)
 #define _OBJECT_STORE
-
-#define true 1
-#define false 0
-#define bool int
 
 #define SOCKNAME "objstore.sock"
 #define MAX_CONN 256

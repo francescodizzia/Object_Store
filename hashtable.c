@@ -14,16 +14,17 @@
 #include <ctype.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <stdbool.h>
 
 #include <hashtable.h>
 #include <lib.h>
 
-linkedlist *insertLinkedList(linkedlist *head, char* name){
-  linkedlist *new = calloc(1,sizeof(linkedlist));
+void insertLinkedList(linkedlist* *head, char* name){
+  linkedlist *new = calloc(1, sizeof(linkedlist));
   new->name = strdup(name);
-  new->next = head;
+  new->next = *head;
 
-  return new;
+  *head = new;
 }
 
 void printLinkedList(linkedlist *head){
@@ -44,26 +45,29 @@ bool isInLinkedList(linkedlist *head, char* target){
   return isInLinkedList(head->next,target);
 }
 
-linkedlist *removeLinkedList(linkedlist* head, char* target){
-  if(head == NULL)return NULL;
+void removeLinkedList(linkedlist* *head, char* target){
+  if(*head == NULL)return;
 
-  linkedlist* curr = head;
+  linkedlist* curr = *head;
   linkedlist* prec = NULL;
 
   while(curr != NULL){
     if(strcmp(curr->name,target) == 0){
       if(prec == NULL){
-        head = curr->next;
+        *head = curr->next;
         free(curr->name);
         curr->name = NULL;
         free(curr);
         curr = NULL;
-        return head;
+        return;
       }
       else{
       prec->next = curr->next;
+      free(curr->name);
+      curr->name = NULL;
       free(curr);
-      return head;
+      curr = NULL;
+      return;
       }
     }
 
@@ -71,12 +75,11 @@ linkedlist *removeLinkedList(linkedlist* head, char* target){
     curr = curr->next;
   }
 
- return NULL;
 }
 
 
-void freeLinkedList(linkedlist *head){
-  linkedlist *curr = head, *tmp;
+void freeLinkedList(linkedlist* *head){
+  linkedlist *curr = *head, *tmp;
 
   while(curr != NULL){
     tmp = curr;
@@ -110,17 +113,17 @@ hashtable createHashTable(size_t N){
   return T;
 }
 
-hashtable insertHashTable(hashtable T, char* elem){
-  unsigned long h = hash(elem) % T.size;
-  pthread_mutex_lock(&(T.field[h].mtx));
+void insertHashTable(hashtable *T, char* elem){
+  unsigned long h = hash(elem) % T->size;
+  pthread_mutex_lock(&(T->field[h].mtx));
   //DEBUG_PRINT("Insert: Entering mutex %lu\n",h);
 
-  T.field[h].list = insertLinkedList(T.field[h].list, elem);
+  insertLinkedList(&(T->field[h].list), elem);
+//  printf("[+]added %s\n",elem);
 
 //  DEBUG_PRINT("Insert: Exiting mutex %lu\n",h);
-  pthread_mutex_unlock(&(T.field[h].mtx));
+  pthread_mutex_unlock(&(T->field[h].mtx));
 
-  return T;
 }
 
 void printHashTable(hashtable T){
@@ -148,27 +151,26 @@ bool isInHashTable(hashtable T, char* name){
   return result;
 }
 
-hashtable removeHashTable(hashtable T, char* target){
-  if(target == NULL)return T;
-  unsigned long h = hash(target) % T.size;
+void removeHashTable(hashtable *T, char* target){
+  if(target == NULL)return;
+  unsigned long h = hash(target) % T->size;
 
-  pthread_mutex_lock(&(T.field[h].mtx));
-  T.field[h].list = removeLinkedList(T.field[h].list,target);
-  pthread_mutex_unlock(&(T.field[h].mtx));
+  pthread_mutex_lock(&(T->field[h].mtx));
+  removeLinkedList(&(T->field[h].list),target);
+  pthread_mutex_unlock(&(T->field[h].mtx));
 
-  return T;
 }
 
-void freeHashTable(hashtable T){
-  for(int i = 0; i < (T.size); i++){
+void freeHashTable(hashtable *T){
+  for(int i = 0; i < (T->size); i++){
   //  DEBUG_PRINT("Delete: Entering mutex %d\n",i);
-    pthread_mutex_lock(&(T.field[i].mtx));
-    freeLinkedList(T.field[i].list);
+    pthread_mutex_lock(&(T->field[i].mtx));
+    freeLinkedList(&(T->field[i].list));
     //free(T.field[i]);
-    pthread_mutex_unlock(&(T.field[i].mtx));
+    pthread_mutex_unlock(&(T->field[i].mtx));
   //  DEBUG_PRINT("Delete: Exiting mutex %d\n",i);
   }
 
-  free(T.field);
+  free(T->field);
 //  free(T);
 }

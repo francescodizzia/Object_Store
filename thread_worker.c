@@ -61,13 +61,12 @@ void *thread_worker(void *arg) {
   close(connfd);
 
 
-
   pthread_mutex_lock(&mtx);
-  n_clients--;
+    n_clients--;
+    removeHashTable(&HT, currentUser);
 
-  if(n_clients <= 0)
-    pthread_cond_signal(&empty);
-
+    if(n_clients <= 0)
+      pthread_cond_signal(&empty);
   pthread_mutex_unlock(&mtx);
 
 
