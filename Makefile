@@ -29,7 +29,7 @@ libplug.a: lib.o
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	$(RM) ./*.o ./*.out ./server ./client ./$(SOCKNAME) ./*.a
+	$(RM) ./*.o ./*.out ./server ./client ./$(SOCKNAME) ./testout.log ./*.a
 	$(RM) -r ./data/* ./data
 	clear
 .PHONY: rclient rserver clean dclient dserver all

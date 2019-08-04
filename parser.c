@@ -49,12 +49,11 @@ void leave(int connfd, char* currentUser){
 }
 
 
-bool login(int connfd, char* currentUser, char* name){
+void register_(int connfd, char* currentUser, char* name){
   char* user_path = getUserPath(name);
   int result = mkdir(user_path,  0755);
   free(user_path);
 
-//  printf("REGISTRO %s\n",name);
 
   if(currentUser[0] == '\0'){
     strcpy(currentUser,name);
@@ -62,18 +61,17 @@ bool login(int connfd, char* currentUser, char* name){
   }
   else if(str_equals(currentUser,name)){
     printf("User %s already registered.\n",currentUser);
-    return false; //TODO FIX
+    return ; //TODO FIX
   }
-  if(result == 0){ //Successo nella creazione della dir
+  if(result == 0) //Successo nella creazione della dir
     sendOK(connfd,currentUser,"REGISTER");
-    return true;
-  }
-  else{ //FAIL
-    sendKO(connfd,currentUser,"REGISTER");
-    return false;
+  else{
+    if(errno == EEXIST)
+      sendOK(connfd,currentUser,"REGISTER");
+    else
+      sendKO(connfd,currentUser,"REGISTER");
   }
 
-  return false;
 }
 
 void store(int connfd, char* currentUser ,char* name, long int len, char* newline){
@@ -121,7 +119,7 @@ void retrieve(int connfd, char* currentUser, char* name){
 
   if(f){
    fread(block, size, 1, f);
-   int N = 7 + getNumberOfDigits(size);
+   int N = 8 + getNumberOfDigits(size);
    char* buff = calloc(N+ 1, sizeof(char));
 
    sprintf(buff,"DATA %lu \n ", size);
@@ -175,7 +173,7 @@ void parse_request(int connfd, char *str,char* currentUser){
 
 
   if(str_equals(operation, "REGISTER"))
-    login(connfd, currentUser, name);
+    register_(connfd, currentUser, name);
   else if(str_equals(operation, "STORE"))
     store(connfd, currentUser, name, len, newline);
   else if(str_equals(operation, "RETRIEVE"))

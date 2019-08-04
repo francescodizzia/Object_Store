@@ -27,7 +27,7 @@ int fd = FD_NULL;
 #define STORE_LENGTH 10
 #define RETRIEVE_LENGTH 11
 #define DELETE_LENGTH 9
-#define DATA_MSG_LENGTH 7
+#define DATA_MSG_LENGTH 8
 
 size_t getNumberOfDigits(size_t k){
   int len;
@@ -112,11 +112,11 @@ void *getDataResponseMsg(){
 
   int n;
   if(len-b > 0){
-    memcpy(data,(newline+1),b);
+    memcpy(data,(newline+2),b);
     n = readn(fd, ((char*) data)+b,len-b);
     if(n <= 0){printf("PROBLEMA");return NULL;}  //TODO
   }
-  else memcpy(data,(void*)(newline+1),len);
+  else memcpy(data,(void*)(newline+2),len);
 
  return data;
 }
