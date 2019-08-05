@@ -22,26 +22,23 @@
 char* makeTestArray1(int N){
   char *A = calloc(N, 1);
 
-  //if(type == 1){
     int j = 0;
     for(int i = 0; i < N; i++, j++){
         if(j > 9) j = 0;
         A[i] = '0' + j;
     }
+
     return A;
-  //}
-
-
-
 }
 
 bool test1(char* user){
   char obj_name[128];
   memset(obj_name,'\0',128);
 
+  int size = 0;
 
   for(int i = 0; i < 20; i++){
-    int size = 100 + ((i*17)*(i*17));
+    size = 100 + ((i*17)*(i*17));
     if(size > 100000)
       size = 100000;
 
@@ -53,45 +50,32 @@ bool test1(char* user){
 
   }
 
-
   return true;
 }
 
-void *getBuffer(char* src){
-  FILE *f = fopen(src, "rb");
-  bool result = false;
+bool test2(char* user){
+  void *retrieved_obj = NULL;
+  char obj_name[128];
+  memset(obj_name, '\0', 128);
 
-  if(f){
-   int d = fileno(f);
+  int size = 0;
 
-   if(d == -1)return false;
+  for(int i = 0; i < 20; i++){
+    sprintf(obj_name,"object_%d",i+1);
+    size = 100 + ((i*17)*(i*17));
+    if(size > 100000)
+      size = 100000;
 
-   struct stat finfo;
-   fstat(d, &finfo);
+    retrieved_obj = os_retrieve(obj_name);
+    ASSERT_BOOL(retrieved_obj);
 
-   size_t size = finfo.st_size;
-   void *buffer = calloc(size, 1);
-   fread(buffer, size, 1, f);
+    if(memcmp(retrieved_obj, makeTestArray1(size), size) != 0)
+      return false;
 
-   fclose(f);
-   return buffer;
+    memset(obj_name, '\0', 128);
   }
 
-  printf("NULL\n");
- return NULL;
-}
 
-
-bool test2(char* user){
-  void *f1 = getBuffer("./data/user_1/object_2");
-  void *f2 = getBuffer("./data/user_1/object_3");
-
-  if(memcmp(f1, f2, 256) == 0)
-    printf("MATCH\n");
-  else printf("MISMATCH\n");
-
-  free(f1);
-  free(f2);
 
   return true;
 }
@@ -108,6 +92,7 @@ bool test3(char* user){
     memset(obj_name, '\0', 128);
   }
 
+  ASSERT_BOOL(os_disconnect());
 
   return true;
 }
