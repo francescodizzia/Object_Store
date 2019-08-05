@@ -19,8 +19,8 @@
 #include <server.h>
 #include <parser.h>
 #include <hashtable.h>
+#include <thread_worker.h>
 
-#define USER_MAX_LENGTH 255
 
 void *thread_worker(void *arg) {
   long connfd = (long)arg;
@@ -63,7 +63,11 @@ void *thread_worker(void *arg) {
 
   pthread_mutex_lock(&mtx);
     n_clients--;
-    removeHashTable(&HT, currentUser);
+
+    if(currentUser[0] != '\0'){
+      removeHashTable(&HT, currentUser);
+      memset(currentUser, '\0', USER_MAX_LENGTH);
+    }
 
     if(n_clients <= 0)
       pthread_cond_signal(&empty);

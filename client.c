@@ -13,61 +13,84 @@
 #include <lib.h>
 #include <stdbool.h>
 
-bool terminate = false;
-bool final = false;
 
-void sigIntHandler(){
- terminate = true;
- printf("ZA WARUDOOO\n");
+#define ASSERT_BOOL(c){\
+  if(!c)\
+    return false;\
 }
 
-void printBool(int b){
-  if(b == true)
-   printf("true\n");
-  else
-   printf("false\n");
+char* makeTestArray1(int N){
+  char *A = calloc(N, 1);
+
+  //if(type == 1){
+    int j = 0;
+    for(int i = 0; i < N; i++, j++){
+        if(j > 9) j = 0;
+        A[i] = '0' + j;
+    }
+    return A;
+  //}
+
+
+
 }
 
-void test0(char* user){
- char string[] = "Prova 12345";
+bool test1(char* user){
+  char obj_name[128];
+  memset(obj_name,'\0',128);
 
-   bool a = os_connect(user);
-   bool b = os_store("testo",string,strlen(string));
-   bool c = sendFile("./art.gife","./goomba.gif");
-   bool d = sendFile("./jojo.jpg","./JoJo.jpg");
-   bool z = true;
 
-/*
-   if(strcmp(user,"user_88") == 0){
-     void* block = os_retrieve("goomba.gif");
-     os_store("copy.gif",block,261);
+
+  for(int i = 0; i < 20; i++){
+    int size = 100 + ((i*17)*(i*17));
+    if(size > 100000)
+      size = 100000;
+
+    sprintf(obj_name,"object_%d",i+1);
+
+    ASSERT_BOOL(os_connect(user));
+    ASSERT_BOOL(os_store(obj_name, makeTestArray1(size), size));
+    ASSERT_BOOL(os_disconnect());
+
   }
-*/
 
-/*
-   if(str_equals(user, "user_90") || str_equals(user, "user_10"))
-      z = os_delete("JoJo.jpg");
 
-   if(str_equals(user, "user_100"))
-      os_delete("../user_1/JoJo.jpg");
-*/
-   bool e = os_disconnect();
+  return true;
+}
 
- final = a && b && c && d && e && z;
+bool test2(char* user){
+
+}
+
+bool test3(char* user){
+
 }
 
 int main(int argc,char* argv[]){
 
   signal(SIGPIPE, SIG_IGN);
-  signal(SIGINT, sigIntHandler);
+  //signal(SIGINT, sigIntHandler);
 
-  test0(argv[1]);
+  if(argc < 3){
+    printf("usage\n");  //TODO
+    return 1;
+  }
 
-  if(final)
-    printf("[OK] ");
+  char* user = strdup(argv[1]);
+  int test_code = atol(argv[2]);
+  bool result = false;
+
+  if(test_code == 1)
+    result = test1(user);
+  else if(test_code == 2)
+    result = test2(user);
+  else if(test_code == 3)
+    result = test3(user);
+
+  if(result)
+    printf("Test %d passato con successo! [utente: %s]", test_code, user);
   else
-    printf("[KO] ");
-  printf("%s closed.\n",argv[1]);
+    printf("Test %d fallito... [utente: %s]", test_code, user);
 
   return 0;
 }

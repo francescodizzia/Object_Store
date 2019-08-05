@@ -44,7 +44,8 @@ void sendKO(int connfd, char* currentUser, char* operation, char* message){
 
 
 void leave(int connfd, char* currentUser){
-  //removeHashTable(&HT,currentUser);
+  removeHashTable(&HT,currentUser);
+  memset(currentUser, '\0', USER_MAX_LENGTH);
   sendOK(connfd, currentUser, "LEAVE");
 }
 
