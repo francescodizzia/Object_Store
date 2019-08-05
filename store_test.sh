@@ -1,15 +1,20 @@
 #!/bin/bash
 
-for i in {1..100}
+for i in {1..50}
 do
-  ./client "user_${i}" &
+  ./client "user_${i}" 1 &
 done
 
 wait
 
-for k in {1..5}
+for i in {1..50}
 do
- ./client "user_fail" &
+  if [ "${i}" -le "30" ]
+  then
+  ./client "user_${i}" 2 &
+  else
+  ./client "user_${i}" 3 &
+  fi
 
 done
 

@@ -40,7 +40,6 @@ bool test1(char* user){
   memset(obj_name,'\0',128);
 
 
-
   for(int i = 0; i < 20; i++){
     int size = 100 + ((i*17)*(i*17));
     if(size > 100000)
@@ -58,12 +57,59 @@ bool test1(char* user){
   return true;
 }
 
-bool test2(char* user){
+void *getBuffer(char* src){
+  FILE *f = fopen(src, "rb");
+  bool result = false;
 
+  if(f){
+   int d = fileno(f);
+
+   if(d == -1)return false;
+
+   struct stat finfo;
+   fstat(d, &finfo);
+
+   size_t size = finfo.st_size;
+   void *buffer = calloc(size, 1);
+   fread(buffer, size, 1, f);
+
+   fclose(f);
+   return buffer;
+  }
+
+  printf("NULL\n");
+ return NULL;
+}
+
+
+bool test2(char* user){
+  void *f1 = getBuffer("./data/user_1/object_2");
+  void *f2 = getBuffer("./data/user_1/object_3");
+
+  if(memcmp(f1, f2, 256) == 0)
+    printf("MATCH\n");
+  else printf("MISMATCH\n");
+
+  free(f1);
+  free(f2);
+
+  return true;
 }
 
 bool test3(char* user){
+  char obj_name[128];
+  memset(obj_name, '\0', 128);
 
+  ASSERT_BOOL(os_connect(user));
+
+  for(int i = 0; i < 20; i++){
+    sprintf(obj_name,"object_%d",i+1);
+    ASSERT_BOOL(os_delete(obj_name));
+    memset(obj_name, '\0', 128);
+  }
+
+
+  return true;
 }
 
 int main(int argc,char* argv[]){
@@ -88,9 +134,9 @@ int main(int argc,char* argv[]){
     result = test3(user);
 
   if(result)
-    printf("Test %d passato con successo! [utente: %s]", test_code, user);
+    printf("Test %d passato con successo! [utente: %s]\n", test_code, user);
   else
-    printf("Test %d fallito... [utente: %s]", test_code, user);
+    printf("Test %d fallito... [utente: %s]\n", test_code, user);
 
   return 0;
 }
