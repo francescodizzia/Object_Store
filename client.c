@@ -54,6 +54,10 @@ bool test1(char* user){
 }
 
 bool test2(char* user){
+
+
+  ASSERT_BOOL(os_connect(user));
+
   void *retrieved_obj = NULL;
   char obj_name[128];
   memset(obj_name, '\0', 128);
@@ -75,7 +79,7 @@ bool test2(char* user){
     memset(obj_name, '\0', 128);
   }
 
-
+  ASSERT_BOOL(os_disconnect());
 
   return true;
 }
