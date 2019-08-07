@@ -101,10 +101,28 @@ bool test3(char* user){
   return true;
 }
 
+void signalHandler(int signal) {
+    if(signal == SIGPIPE)
+      ;
+    else if(signal == SIGINT)
+      write(1, "Ho ricevuto SIGINT\n",19);
+
+}
+
 int main(int argc,char* argv[]){
 
   signal(SIGPIPE, SIG_IGN);
-  //signal(SIGINT, sigIntHandler);
+
+    struct sigaction s;
+
+    memset(&s, 0, sizeof(s));
+    s.sa_handler = signalHandler;
+    s.sa_flags=SA_RESTART;
+
+    sigfillset(&s.sa_mask);
+
+    sigaction(SIGINT,  &s, NULL);
+    sigaction(SIGUSR1, &s, NULL);
 
   if(argc < 3){
     printf("usage\n");  //TODO
@@ -126,6 +144,7 @@ int main(int argc,char* argv[]){
     printf("Test %d passato con successo! [utente: %s]\n", test_code, user);
   else
     printf("Test %d fallito... [utente: %s]\n", test_code, user);
+
 
   return 0;
 }

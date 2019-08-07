@@ -24,7 +24,7 @@
 #define MAX_NAME_LENGTH 101
 
 #define DEBUG_ENABLED 0
-#define HASH_TABLE_SIZE SOMAXCONN
+#define HASH_TABLE_SIZE 256
 
 
 
@@ -34,33 +34,22 @@
 
 
 volatile sig_atomic_t running = true;
+volatile sig_atomic_t print_stats = false;
 pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t empty;
 
+sigset_t set;
+
 int n_clients = 0;
 hashtable HT;
-
-
 
 
 void cleanup() {
   unlink(SOCKNAME);
 }
 
-void sigIntHandler(){
- running = false;
- printf("ZA WARUDOOO\n\n");
 
-
-
-}
-
-void sigUsr1Handler(){
- //printHashTable(HT);
-}
-
-
-void spawn_thread(long connfd) {
+void spawn_thread(long connfd, void *(*startFunction) (void *)) {
   pthread_attr_t thattr;
   pthread_t thid;
 
@@ -78,7 +67,7 @@ void spawn_thread(long connfd) {
      return;
   }
 
-  if (pthread_create(&thid, &thattr, thread_worker, (void*)connfd) != 0) {
+  if (pthread_create(&thid, &thattr, startFunction, (void*)connfd) != 0) {
      fprintf(stderr, "pthread_create FALLITA");
 	   pthread_attr_destroy(&thattr);
 	   close(connfd);
@@ -86,17 +75,74 @@ void spawn_thread(long connfd) {
   }
 }
 
+void spawn_thread2(void* ptr, void *(*startFunction) (void *)) {
+  pthread_attr_t thattr;
+  pthread_t thid;
+
+  if(pthread_attr_init(&thattr) != 0) {
+	    fprintf(stderr, "pthread_attr_init FALLITA\n");
+	    //close(connfd);
+	    return;
+  }
+
+    // settiamo il thread in modalità detached
+  if (pthread_attr_setdetachstate(&thattr,PTHREAD_CREATE_DETACHED) != 0) {
+	   fprintf(stderr, "pthread_attr_setdetachstate FALLITA\n");
+     pthread_attr_destroy(&thattr);
+    //close(connfd);
+     return;
+  }
+
+  if (pthread_create(&thid, &thattr, startFunction, ptr) != 0) {
+     fprintf(stderr, "pthread_create FALLITA");
+	   pthread_attr_destroy(&thattr);
+	  // close(connfd);
+	   return;
+  }
+}
+
+
+void* signal_handler (void* ptr) {
+    // Set di segnali da aspettare
+    sigset_t set = *((sigset_t*) ptr);
+    // Stampa un messaggio di log
+    printf("[objectstore] Signal handling thread started and waiting for signals\n");
+    // Entra nel loop di attesa dei segnali
+    int signal;
+    while (running) {
+        // Attende un segnale
+        sigwait(&set, &signal);
+        // Riconosce il tipo di segnale
+        if (signal == SIGINT || signal == SIGTERM || signal == SIGQUIT)
+            running = false;
+        else if (signal == SIGUSR1)
+            printf("ciao\n");//print_report();
+    }
+    printf("[objectstore] Signal handling thread stopped\n");
+
+    return NULL;
+}
+
+
 int main(){
   cleanup();
   atexit(cleanup);
 
- //Ignoro SIGPIPE
- signal(SIGPIPE, SIG_IGN);
- signal(SIGINT, sigIntHandler);
- signal(SIGUSR1, sigUsr1Handler);
+
+  sigset_t set;
+  sigemptyset(&set);
+  sigaddset(&set, SIGPIPE);
+  sigaddset(&set, SIGINT);
+  sigaddset(&set, SIGTERM);
+  sigaddset(&set, SIGQUIT);
+  sigaddset(&set, SIGUSR1);
+
+  pthread_sigmask(SIG_SETMASK, &set, NULL);
+  pthread_t sig_handler_id;
+  //pthread_create(&sig_handler_id, NULL, signal_handler, (void*) &set);
+  spawn_thread2(&set, signal_handler);
 
  int server_fd = socket(AF_UNIX, SOCK_STREAM, 0);
-
  struct sockaddr_un sa;
  strncpy(sa.sun_path, SOCKNAME, strlen(SOCKNAME)+1);
  sa.sun_family = AF_UNIX;
@@ -109,18 +155,11 @@ int main(){
  fd_set readfds;
  struct timeval timeout;
 
- int clients = n_clients;
 
  HT = createHashTable(HASH_TABLE_SIZE);
 
  while(running){
-   /*
-   pthread_mutex_lock(&mtx);
-   if(clients != n_clients)
-     DEBUG_CMD(printf("%d\n",n_clients));
-   clients = n_clients;
-   pthread_mutex_unlock(&mtx);
-   */
+
    FD_ZERO(&readfds);
    FD_SET(server_fd, &readfds);
 
@@ -130,16 +169,19 @@ int main(){
    sret = select(server_fd+1,&readfds, NULL, NULL, &timeout);
 
    if(sret == 0){
-     //printf(" timeout\n");
+     printf("timeout\n");
+
    }
    else{
+
       if(sret == -1){
        printf("OMAE WA MO SHINDEIRU\n");
        break;
-      }
+     }
+
 
       connfd = accept(server_fd, (struct sockaddr*)NULL ,NULL);
-      spawn_thread(connfd);
+      spawn_thread(connfd, thread_worker);
     }
 
 

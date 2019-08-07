@@ -24,6 +24,13 @@
 
 void *thread_worker(void *arg) {
   long connfd = (long)arg;
+  sigset_t set;
+
+
+  sigemptyset(&set);
+  sigaddset(&set, SIGUSR1);
+  sigaddset(&set, SIGINT);
+  pthread_sigmask(SIG_BLOCK, &set, NULL);
 
   char *header = calloc(MAX_HEADER_SIZE, sizeof(char));
   char currentUser[USER_MAX_LENGTH];
@@ -40,8 +47,10 @@ void *thread_worker(void *arg) {
 
   u = read(connfd, header, MAX_HEADER_SIZE);
 
-  if(u == -1)
+  if(u == -1){
    printf("ohhh shit here we go again\n");
+   break;
+  }
 
   if(u == 0)break;
 
