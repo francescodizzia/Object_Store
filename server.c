@@ -48,6 +48,14 @@ void cleanup() {
   unlink(SOCKNAME);
 }
 
+static unsigned int total = 0;
+
+int sum(const char *fpath, const struct stat *sb, int typeflag) {
+    total += sb->st_size;
+    return 0;
+}
+
+
 
 void spawn_thread(long connfd, void *(*startFunction) (void *)) {
   pthread_attr_t thattr;
@@ -113,10 +121,11 @@ void* signal_handler (void* ptr) {
         // Attende un segnale
         sigwait(&set, &signal);
         // Riconosce il tipo di segnale
-        if (signal == SIGINT || signal == SIGTERM || signal == SIGQUIT)
-            running = false;
-        else if (signal == SIGUSR1)
-            printf("ciao\n");//print_report();
+
+        if(signal == SIGUSR1)
+          write(1,"ciao\n",5);//print_report();
+        else
+          running = false;
     }
     printf("[objectstore] Signal handling thread stopped\n");
 
@@ -131,12 +140,13 @@ int main(){
 
   sigset_t set;
   sigemptyset(&set);
-  sigaddset(&set, SIGPIPE);
+  /*sigaddset(&set, SIGPIPE);
   sigaddset(&set, SIGINT);
   sigaddset(&set, SIGTERM);
   sigaddset(&set, SIGQUIT);
   sigaddset(&set, SIGUSR1);
-
+*/
+  sigfillset(&set);
   pthread_sigmask(SIG_SETMASK, &set, NULL);
   pthread_t sig_handler_id;
   //pthread_create(&sig_handler_id, NULL, signal_handler, (void*) &set);
@@ -148,28 +158,27 @@ int main(){
  sa.sun_family = AF_UNIX;
 
  bind(server_fd, (struct sockaddr *)&sa, sizeof(sa));
- listen(server_fd, MAX_CONN);
+ listen(server_fd, SOMAXCONN);
 
  int sret,connfd;
 
- fd_set readfds;
+ fd_set fds, ready_fds;
  struct timeval timeout;
+ timeout.tv_sec = 0;
+ timeout.tv_usec = 100000;
 
+ FD_ZERO(&fds);
+ FD_SET(server_fd, &fds);
 
  HT = createHashTable(HASH_TABLE_SIZE);
 
  while(running){
 
-   FD_ZERO(&readfds);
-   FD_SET(server_fd, &readfds);
-
-   timeout.tv_sec = 0;
-   timeout.tv_usec = 100000;
-
-   sret = select(server_fd+1,&readfds, NULL, NULL, &timeout);
+   ready_fds = fds;
+   sret = select(server_fd+1,&ready_fds, NULL, NULL, &timeout);
 
    if(sret == 0){
-     printf("timeout\n");
+     //printf("timeout\n");
 
    }
    else{

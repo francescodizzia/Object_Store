@@ -4,12 +4,11 @@
 #define _OBJECT_STORE
 
 #define SOCKNAME "objstore.sock"
-#define MAX_CONN 256
 
 #define MAX_PATH_SIZE 4096
 #define DATA_DIRECTORY "./data/"
 
-#define MAX_HEADER_SIZE 128
+#define MAX_HEADER_SIZE 512
 #define MAX_RESPONSE_SIZE 128
 
 
