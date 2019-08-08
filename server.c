@@ -14,6 +14,7 @@
 #include <pthread.h>
 #include <ctype.h>
 #include <fcntl.h>
+#include <ftw.h>
 
 #include <lib.h>
 #include <thread_worker.h>
@@ -26,6 +27,7 @@
 #define DEBUG_ENABLED 0
 #define HASH_TABLE_SIZE 256
 
+#define ONE_MB 1000000
 
 
 #define DEBUG_CMD(c) \
@@ -48,11 +50,20 @@ void cleanup() {
   unlink(SOCKNAME);
 }
 
-static unsigned int total = 0;
+size_t total_size = 0;
+size_t number_objects = 0;
+size_t number_users = 0;
 
-int sum(const char *fpath, const struct stat *sb, int typeflag) {
-    total += sb->st_size;
-    return 0;
+
+int setStats(const char* filename, const struct stat* stats, int type){
+
+  if(type == FTW_F) //E' un file
+    number_objects++;
+  else if(type == FTW_D) //E' una directory
+    number_users++;
+
+  total_size += stats->st_size;
+  return 0;
 }
 
 
@@ -89,7 +100,6 @@ void spawn_thread2(void* ptr, void *(*startFunction) (void *)) {
 
   if(pthread_attr_init(&thattr) != 0) {
 	    fprintf(stderr, "pthread_attr_init FALLITA\n");
-	    //close(connfd);
 	    return;
   }
 
@@ -97,34 +107,46 @@ void spawn_thread2(void* ptr, void *(*startFunction) (void *)) {
   if (pthread_attr_setdetachstate(&thattr,PTHREAD_CREATE_DETACHED) != 0) {
 	   fprintf(stderr, "pthread_attr_setdetachstate FALLITA\n");
      pthread_attr_destroy(&thattr);
-    //close(connfd);
      return;
   }
 
   if (pthread_create(&thid, &thattr, startFunction, ptr) != 0) {
      fprintf(stderr, "pthread_create FALLITA");
 	   pthread_attr_destroy(&thattr);
-	  // close(connfd);
 	   return;
   }
 }
 
+void resetStats(){
+  total_size = 0;
+  number_objects = 0;
+  number_users = 0;
+}
+
+void printStats(){
+  ftw("./data/",setStats,0);
+
+  number_users--; //Escludo dal conteggio la cartella 'data' stessa
+  float size_in_MB = ((float)total_size)/ONE_MB;
+  pthread_mutex_lock(&mtx);
+  printf("Size totale degli oggetti: %lu byte (%.2f MB)\nNumero di oggetti: %lu\nCartelle: %lu\nClient connessi: %d\n",total_size, size_in_MB, number_objects,number_users,n_clients);
+  pthread_mutex_unlock(&mtx);
+  resetStats();
+}
+
 
 void* signal_handler (void* ptr) {
-    // Set di segnali da aspettare
     sigset_t set = *((sigset_t*) ptr);
-    // Stampa un messaggio di log
-    printf("[objectstore] Signal handling thread started and waiting for signals\n");
-    // Entra nel loop di attesa dei segnali
+
     int signal;
     while (running) {
         // Attende un segnale
         sigwait(&set, &signal);
         // Riconosce il tipo di segnale
 
-        if(signal == SIGUSR1)
-          write(1,"ciao\n",5);//print_report();
-        else
+        if(signal == SIGUSR1) //Stampo le stats
+          print_stats = true;//printStats();
+        else //Ogni altro segnale fa chiudere in modo 'gentile' il server e i client
           running = false;
     }
     printf("[objectstore] Signal handling thread stopped\n");
@@ -140,16 +162,9 @@ int main(){
 
   sigset_t set;
   sigemptyset(&set);
-  /*sigaddset(&set, SIGPIPE);
-  sigaddset(&set, SIGINT);
-  sigaddset(&set, SIGTERM);
-  sigaddset(&set, SIGQUIT);
-  sigaddset(&set, SIGUSR1);
-*/
   sigfillset(&set);
   pthread_sigmask(SIG_SETMASK, &set, NULL);
-  pthread_t sig_handler_id;
-  //pthread_create(&sig_handler_id, NULL, signal_handler, (void*) &set);
+
   spawn_thread2(&set, signal_handler);
 
  int server_fd = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -179,7 +194,10 @@ int main(){
 
    if(sret == 0){
      //printf("timeout\n");
-
+     if(print_stats){
+      printStats();
+      print_stats = false;
+     }
    }
    else{
 

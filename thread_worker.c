@@ -28,8 +28,7 @@ void *thread_worker(void *arg) {
 
 
   sigemptyset(&set);
-  sigaddset(&set, SIGUSR1);
-  sigaddset(&set, SIGINT);
+  sigfillset(&set);
   pthread_sigmask(SIG_BLOCK, &set, NULL);
 
   char *header = calloc(MAX_HEADER_SIZE, sizeof(char));
@@ -43,27 +42,10 @@ void *thread_worker(void *arg) {
   int u=0;
 
   while(running){
-
-
-  u = read(connfd, header, MAX_HEADER_SIZE);
-
-  if(u == -1){
-   printf("ohhh shit here we go again\n");
-   break;
-  }
-
-  if(u == 0)break;
-
-  parse_request(connfd,header,currentUser);
-
-  memset(header,'\0',MAX_HEADER_SIZE);
-
-/*
-  if(str_equals(currentUser,"user_90") || str_equals(currentUser,"user_99")){
-    while(true)
-     ;
-  }
-*/
+    u = read(connfd, header, MAX_HEADER_SIZE);
+    if(u < 0)break;
+    parse_request(connfd,header,currentUser);
+    memset(header,'\0',MAX_HEADER_SIZE);
   }
 
   free(header);
