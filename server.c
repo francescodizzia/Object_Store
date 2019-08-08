@@ -38,6 +38,10 @@
 volatile sig_atomic_t running = true;
 volatile sig_atomic_t print_stats = false;
 pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t fs_mtx = PTHREAD_MUTEX_INITIALIZER;
+
+
+pthread_cond_t tree_walk_cond;
 pthread_cond_t empty;
 
 sigset_t set;
@@ -57,9 +61,9 @@ size_t number_users = -1;
 
 int setStats(const char* filename, const struct stat* stats, int type){
 
-  if(type == FTW_F) //E' un file
+  if(type == FTW_F) // E' un file
     number_objects++;
-  else if(type == FTW_D) //E' una directory
+  else if(type == FTW_D) //E ' una directory
     number_users++;
 
   total_size += stats->st_size;
@@ -124,19 +128,27 @@ void resetStats(){
 }
 
 void printStats(){
-  ftw("./data/",setStats,0);
+/*
+  pthread_mutex_lock(&mtx);
+    int currentClients = n_clients;
+  pthread_mutex_unlock(&mtx);
+*/
+  pthread_mutex_lock(&fs_mtx);
+    ftw("./data/",setStats,0);
+  pthread_mutex_unlock(&fs_mtx);
 
   float size_in_MB = ((float)total_size)/ONE_MB;
 
-  pthread_mutex_lock(&mtx);
   for(int i = 0; i< 50; i++)printf("*");
+  //pthread_mutex_lock(&mtx);
   printf("\nSize totale degli oggetti: %lu byte (%.2f MB)\nNumero di oggetti: %lu\nCartelle: %lu\nClient connessi: %d\n",total_size, size_in_MB, number_objects,number_users,n_clients);
+  //pthread_mutex_unlock(&mtx);
   for(int i = 0; i< 50; i++)printf("*");
   printf("\n");
-  pthread_mutex_unlock(&mtx);
-
 
   resetStats();
+
+
 }
 
 
@@ -145,13 +157,10 @@ void* signal_handler (void* ptr) {
 
     int signal;
     while (running) {
-        // Attende un segnale
         sigwait(&set, &signal);
-        // Riconosce il tipo di segnale
 
         if(signal == SIGUSR1) //Stampo le stats
-          print_stats = true;//
-          //printStats();
+          printStats();
         else //Ogni altro segnale fa chiudere in modo 'gentile' il server e i client
           running = false;
     }
@@ -184,9 +193,6 @@ int main(){
  int sret,connfd;
 
  fd_set fds, ready_fds;
- struct timeval timeout;
- timeout.tv_sec = 0;
- timeout.tv_usec = 100000;
 
  FD_ZERO(&fds);
  FD_ZERO(&ready_fds);
@@ -194,41 +200,32 @@ int main(){
 
  HT = createHashTable(HASH_TABLE_SIZE);
 
+ struct timeval timeout;
+ timeout.tv_sec = 0;      //0 secondi
+ timeout.tv_usec = 10000; //(10000 microsecondi = 10 millisecondi)
+
  while(running){
 
    ready_fds = fds;
    sret = select(server_fd+1, &ready_fds, NULL, NULL, &timeout);
 
-   if(sret == 0){
-     if(print_stats){
-      printStats();
-      print_stats = false;
-     }
+   if(sret == -1)
+    printf("errore");
+   else if(FD_ISSET(server_fd ,&ready_fds)){
+     connfd = accept(server_fd, NULL, NULL);
+     spawn_thread(connfd, thread_worker);
    }
-   else{
 
-      if(sret == -1){
-       printf("OMAE WA MO SHINDEIRU\n");
-       break;
-     }
-
-
-      connfd = accept(server_fd, (struct sockaddr*)NULL ,NULL);
-      spawn_thread(connfd, thread_worker);
-  }
-
-
-
-}
+ }
 
 
   printHashTable(HT);
 
   pthread_mutex_lock(&mtx);
-  if(n_clients > 0){
-   printf("[X] WAITING FOR THE THREADS\n");
-   pthread_cond_wait(&empty, &mtx);
-   printf("[+] DONE\n");
+    if(n_clients > 0){
+      printf("[X] WAITING FOR THE THREADS\n");
+    pthread_cond_wait(&empty, &mtx);
+    printf("[+] DONE\n");
   }
   pthread_mutex_unlock(&mtx);
 

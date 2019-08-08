@@ -62,9 +62,12 @@ void register_(int connfd, char* currentUser, char* name){
     insertHashTable(&HT,currentUser);
   }
 
-
   char* user_path = getUserPath(name);
-  int result = mkdir(user_path,  0755);
+
+  pthread_mutex_lock(&fs_mtx);
+    int result = mkdir(user_path,  0755);
+  pthread_mutex_unlock(&fs_mtx);
+
   free(user_path);
 
 
@@ -94,7 +97,10 @@ void store(int connfd, char* currentUser ,char* name, long int len, char* newlin
   if(currentUser[0] == '\0')
     sendKO(connfd, currentUser, "STORE", "User not registered");
   else{
-    int success = createFile(name,data,currentUser,len);
+    pthread_mutex_lock(&fs_mtx);
+      int success = createFile(name,data,currentUser,len);
+    pthread_mutex_unlock(&fs_mtx);
+
     if(success)
       sendOK(connfd, currentUser, "STORE");
     else
@@ -110,36 +116,40 @@ void retrieve(int connfd, char* currentUser, char* name){
   strcat(file_path,user_path);
   strcat(file_path,name);
 
-  FILE *f = fopen(file_path, "rb");
-  int d = fileno(f);
+  pthread_mutex_lock(&fs_mtx);
+    FILE *f = fopen(file_path, "rb");
+    int d = fileno(f);
 
-  free(user_path);
-  free(file_path);
+    free(user_path);
+    free(file_path);
 
-  struct stat finfo;
-  fstat(d, &finfo);
+    struct stat finfo;
+    fstat(d, &finfo);
 
-  size_t size = finfo.st_size;
-  void *block = calloc(size, 1);
+    size_t size = finfo.st_size;
+    void *block = calloc(size, 1);
 
-  if(f){
-   fread(block, size, 1, f);
-   int N = 8 + getNumberOfDigits(size);
-   char* buff = calloc(N+ 1, sizeof(char));
+    if(f){
+      fread(block, size, 1, f);
 
-   sprintf(buff,"DATA %lu \n ", size);
+    int N = 8 + getNumberOfDigits(size);
+    char* buff = calloc(N+ 1, sizeof(char));
 
-   char* tmp = calloc(N+1+size,sizeof(char));
-   memcpy(tmp,buff,N);
-   memcpy(tmp+N,block,size);
+    sprintf(buff,"DATA %lu \n ", size);
 
-   writen(connfd,tmp,N+size);
+    char* tmp = calloc(N+1+size,sizeof(char));
+    memcpy(tmp,buff,N);
+    memcpy(tmp+N,block,size);
 
-   free(buff);
-   free(tmp);
-   free(block);
-   fclose(f);
- 	}
+    writen(connfd,tmp,N+size);
+
+    free(buff);
+    free(tmp);
+    free(block);
+    fclose(f);
+ 	 }
+  pthread_mutex_unlock(&fs_mtx);
+
 }
 
 
@@ -149,7 +159,9 @@ void delete(int connfd, char* currentUser, char* name){
   strcat(file_path,user_path);
   strcat(file_path,name);
 
-  bool success = (remove(file_path) == 0);
+  pthread_mutex_lock(&fs_mtx);
+    bool success = (remove(file_path) == 0);
+  pthread_mutex_unlock(&fs_mtx);
 
   free(user_path);
   free(file_path);

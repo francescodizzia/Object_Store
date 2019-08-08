@@ -48,10 +48,6 @@ void *thread_worker(void *arg) {
     memset(header,'\0',MAX_HEADER_SIZE);
   }
 
-  free(header);
-  close(connfd);
-
-
   pthread_mutex_lock(&mtx);
     n_clients--;
 
@@ -64,6 +60,9 @@ void *thread_worker(void *arg) {
       pthread_cond_signal(&empty);
   pthread_mutex_unlock(&mtx);
 
+
+  free(header);
+  close(connfd);
 
   return NULL;
 }

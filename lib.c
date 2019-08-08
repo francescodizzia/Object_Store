@@ -30,6 +30,7 @@ int fd = FD_NULL;
 #define DELETE_LENGTH 9
 #define DATA_MSG_LENGTH 8
 
+
 size_t getNumberOfDigits(size_t k){
   int len;
 	if(k == 0)return 1;
@@ -56,11 +57,9 @@ bool createFile(char* filename, void* data, char* username, size_t size){
 
  strcat(path,username);
  strcat(path,"/");
- //printf("path: %s\n",path);
  strcat(path,filename);
 
  int new_fd = open(path, O_CREAT | O_WRONLY | O_TRUNC, S_IRUSR | S_IWUSR);
- //open(path, O_CREAT | O_EXCL | O_WRONLY, 0644);
 
  if(new_fd < 0)
   return false;
