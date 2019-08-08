@@ -37,6 +37,8 @@ bool test1(char* user){
 
   int size = 0;
 
+  ASSERT_BOOL(os_connect(user));
+
   for(int i = 0; i < 20; i++){
     size = 100 + ((i*17)*(i*17));
     if(size > 100000)
@@ -44,11 +46,10 @@ bool test1(char* user){
 
     sprintf(obj_name,"object_%d",i+1);
 
-    ASSERT_BOOL(os_connect(user));
     ASSERT_BOOL(os_store(obj_name, makeTestArray1(size), size));
-    ASSERT_BOOL(os_disconnect());
-
   }
+
+  ASSERT_BOOL(os_disconnect());
 
   return true;
 }

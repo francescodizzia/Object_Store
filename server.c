@@ -52,7 +52,7 @@ void cleanup() {
 
 size_t total_size = 0;
 size_t number_objects = 0;
-size_t number_users = 0;
+size_t number_users = -1;
 
 
 int setStats(const char* filename, const struct stat* stats, int type){
@@ -120,17 +120,20 @@ void spawn_thread2(void* ptr, void *(*startFunction) (void *)) {
 void resetStats(){
   total_size = 0;
   number_objects = 0;
-  number_users = 0;
+  number_users = -1;
 }
 
 void printStats(){
   ftw("./data/",setStats,0);
 
-  number_users--; //Escludo dal conteggio la cartella 'data' stessa
   float size_in_MB = ((float)total_size)/ONE_MB;
+
+  for(int i = 0; i< 40; i++)printf("*");
   pthread_mutex_lock(&mtx);
-  printf("Size totale degli oggetti: %lu byte (%.2f MB)\nNumero di oggetti: %lu\nCartelle: %lu\nClient connessi: %d\n",total_size, size_in_MB, number_objects,number_users,n_clients);
+  printf("\nSize totale degli oggetti: %lu byte (%.2f MB)\nNumero di oggetti: %lu\nCartelle: %lu\nClient connessi: %d\n",total_size, size_in_MB, number_objects,number_users,n_clients);
   pthread_mutex_unlock(&mtx);
+  for(int i = 0; i< 40; i++)printf("*");
+
   resetStats();
 }
 

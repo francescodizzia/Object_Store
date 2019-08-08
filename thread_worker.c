@@ -43,7 +43,7 @@ void *thread_worker(void *arg) {
 
   while(running){
     u = read(connfd, header, MAX_HEADER_SIZE);
-    if(u < 0)break;
+    if(u <= 0)break;
     parse_request(connfd,header,currentUser);
     memset(header,'\0',MAX_HEADER_SIZE);
   }
