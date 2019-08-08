@@ -128,11 +128,13 @@ void printStats(){
 
   float size_in_MB = ((float)total_size)/ONE_MB;
 
-  for(int i = 0; i< 40; i++)printf("*");
   pthread_mutex_lock(&mtx);
+  for(int i = 0; i< 50; i++)printf("*");
   printf("\nSize totale degli oggetti: %lu byte (%.2f MB)\nNumero di oggetti: %lu\nCartelle: %lu\nClient connessi: %d\n",total_size, size_in_MB, number_objects,number_users,n_clients);
+  for(int i = 0; i< 50; i++)printf("*");
+  printf("\n");
   pthread_mutex_unlock(&mtx);
-  for(int i = 0; i< 40; i++)printf("*");
+
 
   resetStats();
 }
@@ -148,7 +150,8 @@ void* signal_handler (void* ptr) {
         // Riconosce il tipo di segnale
 
         if(signal == SIGUSR1) //Stampo le stats
-          print_stats = true;//printStats();
+          print_stats = true;//
+          //printStats();
         else //Ogni altro segnale fa chiudere in modo 'gentile' il server e i client
           running = false;
     }
@@ -186,6 +189,7 @@ int main(){
  timeout.tv_usec = 100000;
 
  FD_ZERO(&fds);
+ FD_ZERO(&ready_fds);
  FD_SET(server_fd, &fds);
 
  HT = createHashTable(HASH_TABLE_SIZE);
@@ -193,10 +197,9 @@ int main(){
  while(running){
 
    ready_fds = fds;
-   sret = select(server_fd+1,&ready_fds, NULL, NULL, &timeout);
+   sret = select(server_fd+1, &ready_fds, NULL, NULL, &timeout);
 
    if(sret == 0){
-     //printf("timeout\n");
      if(print_stats){
       printStats();
       print_stats = false;
@@ -212,7 +215,7 @@ int main(){
 
       connfd = accept(server_fd, (struct sockaddr*)NULL ,NULL);
       spawn_thread(connfd, thread_worker);
-    }
+  }
 
 
 
