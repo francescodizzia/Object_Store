@@ -142,9 +142,9 @@ int main(int argc,char* argv[]){
     result = test3(user);
 
   if(result)
-    printf("Test %d passato con successo! [utente: %s]\n", test_code, user);
+    printf("[OK] Test %d passato con successo! [utente: %s]\n", test_code, user);
   else
-    printf("Test %d fallito... [utente: %s]\n", test_code, user);
+    printf("[KO] Test %d fallito... [utente: %s]\n", test_code, user);
 
 
   return 0;

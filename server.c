@@ -30,14 +30,12 @@
 #define ONE_MB 1000000
 
 
-#define DEBUG_CMD(c) \
-  if(DEBUG_ENABLED) {c;}
 
 
 
 volatile sig_atomic_t running = true;
 volatile sig_atomic_t print_stats = false;
-pthread_mutex_t mtx = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t client_mtx = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t fs_mtx = PTHREAD_MUTEX_INITIALIZER;
 
 
@@ -63,7 +61,7 @@ int setStats(const char* filename, const struct stat* stats, int type){
 
   if(type == FTW_F) // E' un file
     number_objects++;
-  else if(type == FTW_D) //E ' una directory
+  else if(type == FTW_D) //E' una directory
     number_users++;
 
   total_size += stats->st_size;
@@ -128,23 +126,19 @@ void resetStats(){
 }
 
 void printStats(){
-/*
-  pthread_mutex_lock(&mtx);
-    int currentClients = n_clients;
-  pthread_mutex_unlock(&mtx);
-*/
+
   pthread_mutex_lock(&fs_mtx);
     ftw("./data/",setStats,0);
   pthread_mutex_unlock(&fs_mtx);
 
   float size_in_MB = ((float)total_size)/ONE_MB;
 
-  for(int i = 0; i< 50; i++)printf("*");
-  //pthread_mutex_lock(&mtx);
-  printf("\nSize totale degli oggetti: %lu byte (%.2f MB)\nNumero di oggetti: %lu\nCartelle: %lu\nClient connessi: %d\n",total_size, size_in_MB, number_objects,number_users,n_clients);
-  //pthread_mutex_unlock(&mtx);
-  for(int i = 0; i< 50; i++)printf("*");
-  printf("\n");
+  pthread_mutex_lock(&client_mtx);
+    for(int i = 0; i < 50; i++)printf("*");
+    printf("\nSize totale degli oggetti: %lu byte (%.2f MB)\nNumero di oggetti: %lu\nCartelle: %lu\nClient connessi: %d\n",total_size, size_in_MB, number_objects,number_users,n_clients);
+    for(int i = 0; i < 50; i++)printf("*");
+    printf("\n");
+  pthread_mutex_unlock(&client_mtx);
 
   resetStats();
 
@@ -173,7 +167,6 @@ void* signal_handler (void* ptr) {
 int main(){
   cleanup();
   atexit(cleanup);
-
 
   sigset_t set;
   sigemptyset(&set);
@@ -208,26 +201,38 @@ int main(){
 
    ready_fds = fds;
    sret = select(server_fd+1, &ready_fds, NULL, NULL, &timeout);
-
+/*
    if(sret == -1)
-    printf("errore");
+     break; //TODO errore da gestire
    else if(FD_ISSET(server_fd ,&ready_fds)){
      connfd = accept(server_fd, NULL, NULL);
      spawn_thread(connfd, thread_worker);
    }
+*/
+
+if(sret == 0){
+   //printf(" timeout\n");
+ }
+ else{
+    if(sret == -1)
+     break;
+
+    connfd = accept(server_fd, NULL ,NULL);
+    spawn_thread(connfd, thread_worker);
+  }
+
 
  }
 
-
   printHashTable(HT);
 
-  pthread_mutex_lock(&mtx);
+  pthread_mutex_lock(&client_mtx);
     if(n_clients > 0){
-      printf("[X] WAITING FOR THE THREADS\n");
-    pthread_cond_wait(&empty, &mtx);
+      printf("[X] WAITING FOR THREADS\n");
+    pthread_cond_wait(&empty, &client_mtx);
     printf("[+] DONE\n");
   }
-  pthread_mutex_unlock(&mtx);
+  pthread_mutex_unlock(&client_mtx);
 
   freeHashTable(&HT);
   close(server_fd);

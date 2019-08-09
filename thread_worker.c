@@ -35,9 +35,9 @@ void *thread_worker(void *arg) {
   char currentUser[USER_MAX_LENGTH];
   memset(currentUser,'\0',USER_MAX_LENGTH);
 
-  pthread_mutex_lock(&mtx);
+  pthread_mutex_lock(&client_mtx);
   n_clients++;
-  pthread_mutex_unlock(&mtx);
+  pthread_mutex_unlock(&client_mtx);
 
   int u=0;
 
@@ -48,7 +48,7 @@ void *thread_worker(void *arg) {
     memset(header,'\0',MAX_HEADER_SIZE);
   }
 
-  pthread_mutex_lock(&mtx);
+  pthread_mutex_lock(&client_mtx);
     n_clients--;
 
     if(currentUser[0] != '\0'){
@@ -58,7 +58,7 @@ void *thread_worker(void *arg) {
 
     if(n_clients <= 0)
       pthread_cond_signal(&empty);
-  pthread_mutex_unlock(&mtx);
+  pthread_mutex_unlock(&client_mtx);
 
 
   free(header);

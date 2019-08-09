@@ -5,7 +5,7 @@
 
 extern hashtable HT;
 
-extern pthread_mutex_t mtx;
+extern pthread_mutex_t client_mtx;
 extern pthread_mutex_t fs_mtx;
 
 extern int n_clients;
