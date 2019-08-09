@@ -153,7 +153,7 @@ void* signal_handler (void* ptr) {
     while (running) {
         sigwait(&set, &signal);
 
-        if(signal == SIGUSR1) //Stampo le stats
+        if(signal == SIGINT) //Stampo le stats
           printStats();
         else //Ogni altro segnale fa chiudere in modo 'gentile' il server e i client
           running = false;
@@ -175,56 +175,34 @@ int main(){
 
   spawn_thread2(&set, signal_handler);
 
- int server_fd = socket(AF_UNIX, SOCK_STREAM, 0);
- struct sockaddr_un sa;
- strncpy(sa.sun_path, SOCKNAME, strlen(SOCKNAME)+1);
- sa.sun_family = AF_UNIX;
+  int server_fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
- bind(server_fd, (struct sockaddr *)&sa, sizeof(sa));
- listen(server_fd, SOMAXCONN);
+  int flags = fcntl(server_fd, F_GETFL, 0);
+  fcntl(server_fd, F_SETFL, flags | O_NONBLOCK);
 
- int sret,connfd;
+  struct sockaddr_un sa;
+  strncpy(sa.sun_path, SOCKNAME, strlen(SOCKNAME)+1);
+  sa.sun_family = AF_UNIX;
 
- fd_set fds, ready_fds;
+  bind(server_fd, (struct sockaddr *)&sa, sizeof(sa));
+  listen(server_fd, SOMAXCONN);
 
- FD_ZERO(&fds);
- FD_ZERO(&ready_fds);
- FD_SET(server_fd, &fds);
+  int connfd;
 
- HT = createHashTable(HASH_TABLE_SIZE);
+  HT = createHashTable(HASH_TABLE_SIZE);
 
- struct timeval timeout;
- timeout.tv_sec = 0;      //0 secondi
- timeout.tv_usec = 10000; //(10000 microsecondi = 10 millisecondi)
+  while(running){
 
- while(running){
+    connfd = accept(server_fd, NULL , NULL);
 
-   ready_fds = fds;
-   sret = select(server_fd+1, &ready_fds, NULL, NULL, &timeout);
-/*
-   if(sret == -1)
-     break; //TODO errore da gestire
-   else if(FD_ISSET(server_fd ,&ready_fds)){
-     connfd = accept(server_fd, NULL, NULL);
-     spawn_thread(connfd, thread_worker);
-   }
-*/
+    if(connfd > 0)
+      spawn_thread(connfd, thread_worker);
 
-if(sret == 0){
-   //printf(" timeout\n");
- }
- else{
-    if(sret == -1)
-     break;
 
-    connfd = accept(server_fd, NULL ,NULL);
-    spawn_thread(connfd, thread_worker);
   }
 
 
- }
-
-  printHashTable(HT);
+  //printHashTable(HT);
 
   pthread_mutex_lock(&client_mtx);
     if(n_clients > 0){
