@@ -163,6 +163,12 @@ void* signal_handler (void* ptr) {
     return NULL;
 }
 
+int updatemax(fd_set set, int fdmax) {
+    for(int i=(fdmax-1);i>=0;--i)
+	if (FD_ISSET(i, &set)) return i;
+    return -1;
+}
+
 
 int main(){
   cleanup();
@@ -177,8 +183,10 @@ int main(){
 
   int server_fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
+/*
   int flags = fcntl(server_fd, F_GETFL, 0);
   fcntl(server_fd, F_SETFL, flags | O_NONBLOCK);
+*/
 
   struct sockaddr_un sa;
   strncpy(sa.sun_path, SOCKNAME, strlen(SOCKNAME)+1);
@@ -189,17 +197,44 @@ int main(){
 
   int connfd;
 
+
+
   HT = createHashTable(HASH_TABLE_SIZE);
 
+  int sret;
+
+  struct timeval timer;
+
+
+  fd_set fds,r_fds;
+
+  FD_ZERO(&fds);
+  FD_SET(server_fd, &fds);
+
   while(running){
+    timer.tv_sec = 0;
+    timer.tv_usec = 10000;
+    r_fds = fds;
 
-    connfd = accept(server_fd, NULL , NULL);
+    sret = select(server_fd+1, &r_fds, NULL, NULL, &timer);
 
-    if(connfd > 0)
-      spawn_thread(connfd, thread_worker);
 
+    if (sret == -1) {
+	    if (errno==EINTR) {
+		      if (!running) break;
+	    } else {
+		     perror("select");
+		     return -1;
+	    }
+	   }
+
+     else if(sret > 0){
+		    connfd = accept(server_fd, (struct sockaddr*)NULL ,NULL);
+        spawn_thread(connfd, thread_worker);
+    }
 
   }
+
 
 
   //printHashTable(HT);
