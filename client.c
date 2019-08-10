@@ -117,7 +117,7 @@ int main(int argc,char* argv[]){
   signal(SIGPIPE, SIG_IGN);
 
   if(argc < 3){
-    printf("usage\n");  //TODO
+    printf("usage\n"); 
     return -1;
   }
 

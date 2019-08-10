@@ -139,13 +139,14 @@ void retrieve(int connfd, char* currentUser, char* name){
       memcpy(tmp+N,block,size);
 
       writen(connfd,tmp,N+size);
+      fprintf(target_output,"user %-15s fd: %-10dop: %-10s\tOK \n",  currentUser, connfd, "RETRIEVE");
 
       free(buff);
       free(tmp);
       free(block);
       fclose(f);
  	  }else{
-      writen(connfd,"DATA 0 \n ",8);
+      sendKO(connfd, currentUser, "RETRIEVE", "Can't retrieve the object");
     }
   pthread_mutex_unlock(&fs_mtx);
 

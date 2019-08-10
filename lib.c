@@ -96,7 +96,7 @@ bool getResponseMsg(){
  return false;
 }
 
-//TODO
+
 void *getDataResponseMsg(){
   char response_buf[MAX_RESPONSE_SIZE];
   memset(response_buf, '\0', MAX_RESPONSE_SIZE);
@@ -106,8 +106,11 @@ void *getDataResponseMsg(){
   long int len = 0;
   char* first_str =  strtok_r(response_buf, " ", &ptr);
 
-  if(first_str == NULL || strcmp(first_str,"KO") == 0)
+  if(first_str == NULL || strcmp(first_str,"KO") == 0){
+    memset(last_error_msg, '\0', 256);
+    strcpy(last_error_msg, response_buf);
     return NULL;
+  }
 
   char* len_str =  strtok_r(NULL, " ", &ptr);
   char* newline = strtok_r(NULL, " ", &ptr);
@@ -116,7 +119,7 @@ void *getDataResponseMsg(){
 
   if(len == 0){
     memset(last_error_msg, '\0', 256);
-    strcpy(last_error_msg, "Cannot retrieve object\n");
+    strcpy(last_error_msg, "Object length is equal to zero\n");
     return NULL;
   }
 
