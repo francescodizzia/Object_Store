@@ -153,7 +153,7 @@ void* signal_handler (void* ptr) {
     while (running) {
         sigwait(&set, &signal);
 
-        if(signal == SIGINT) //Stampo le stats
+        if(signal == SIGUSR1) //Stampo le stats
           printStats();
         else //Ogni altro segnale fa chiudere in modo 'gentile' il server e i client
           running = false;
@@ -163,11 +163,6 @@ void* signal_handler (void* ptr) {
     return NULL;
 }
 
-int updatemax(fd_set set, int fdmax) {
-    for(int i=(fdmax-1);i>=0;--i)
-	if (FD_ISSET(i, &set)) return i;
-    return -1;
-}
 
 
 int main(){
@@ -175,18 +170,13 @@ int main(){
   atexit(cleanup);
 
   sigset_t set;
-  sigemptyset(&set);
+  //sigemptyset(&set);
   sigfillset(&set);
   pthread_sigmask(SIG_SETMASK, &set, NULL);
 
   spawn_thread2(&set, signal_handler);
 
   int server_fd = socket(AF_UNIX, SOCK_STREAM, 0);
-
-/*
-  int flags = fcntl(server_fd, F_GETFL, 0);
-  fcntl(server_fd, F_SETFL, flags | O_NONBLOCK);
-*/
 
   struct sockaddr_un sa;
   strncpy(sa.sun_path, SOCKNAME, strlen(SOCKNAME)+1);
@@ -218,14 +208,8 @@ int main(){
 
     sret = select(server_fd+1, &r_fds, NULL, NULL, &timer);
 
-
     if (sret == -1) {
-	    if (errno==EINTR) {
-		      if (!running) break;
-	    } else {
-		     perror("select");
-		     return -1;
-	    }
+	    break;
 	   }
 
      else if(sret > 0){
@@ -235,9 +219,6 @@ int main(){
 
   }
 
-
-
-  //printHashTable(HT);
 
   pthread_mutex_lock(&client_mtx);
     if(n_clients > 0){

@@ -51,7 +51,6 @@ void leave(int connfd, char* currentUser){
 
 
 void register_(int connfd, char* currentUser, char* name){
-
   if(isInHashTable(HT,name)){
     sendKO(connfd,name,"REGISTER","Multiple clients with the same username");
     return;
@@ -69,7 +68,6 @@ void register_(int connfd, char* currentUser, char* name){
   pthread_mutex_unlock(&fs_mtx);
 
   free(user_path);
-
 
   if(result == 0) //Successo nella creazione della dir
     sendOK(connfd, currentUser, "REGISTER");
@@ -111,6 +109,7 @@ void store(int connfd, char* currentUser ,char* name, long int len, char* newlin
 }
 
 void retrieve(int connfd, char* currentUser, char* name){
+
   char* user_path = getUserPath(currentUser);
   char* file_path = calloc(strlen(user_path)+strlen(name)+1 ,sizeof(char));
   strcat(file_path,user_path);
@@ -118,37 +117,40 @@ void retrieve(int connfd, char* currentUser, char* name){
 
   pthread_mutex_lock(&fs_mtx);
     FILE *f = fopen(file_path, "rb");
-    int d = fileno(f);
-
-    free(user_path);
-    free(file_path);
-
-    struct stat finfo;
-    fstat(d, &finfo);
-
-    size_t size = finfo.st_size;
-    void *block = calloc(size, 1);
 
     if(f){
+      int d = fileno(f);
+
+      struct stat finfo;
+      fstat(d, &finfo);
+
+      size_t size = finfo.st_size;
+      void *block = calloc(size, 1);
+
       fread(block, size, 1, f);
 
-    int N = 8 + getNumberOfDigits(size);
-    char* buff = calloc(N+ 1, sizeof(char));
+      int N = 8 + getNumberOfDigits(size);
+      char* buff = calloc(N + 1, sizeof(char));
 
-    sprintf(buff,"DATA %lu \n ", size);
+      sprintf(buff,"DATA %lu \n ", size);
 
-    char* tmp = calloc(N+1+size,sizeof(char));
-    memcpy(tmp,buff,N);
-    memcpy(tmp+N,block,size);
+      char* tmp = calloc(N+1+size,sizeof(char));
+      memcpy(tmp,buff,N);
+      memcpy(tmp+N,block,size);
 
-    writen(connfd,tmp,N+size);
+      writen(connfd,tmp,N+size);
 
-    free(buff);
-    free(tmp);
-    free(block);
-    fclose(f);
- 	 }
+      free(buff);
+      free(tmp);
+      free(block);
+      fclose(f);
+ 	  }else{
+      writen(connfd,"DATA 0 \n ",8);
+    }
   pthread_mutex_unlock(&fs_mtx);
+
+  free(user_path);
+  free(file_path);
 
 }
 
@@ -171,8 +173,8 @@ void delete(int connfd, char* currentUser, char* name){
 }
 
 
-void parse_request(int connfd, char *str,char* currentUser){
- if(str == NULL)return;
+void parse_request(int connfd, char *str, char* currentUser){
+ if(str == NULL || str[0] == '\0')return;
 
  char* ptr = NULL;
  long int len = 0;
@@ -183,10 +185,8 @@ void parse_request(int connfd, char *str,char* currentUser){
  char* len_str = strtok_r(NULL, " ", &ptr);
  char* newline = strtok_r(NULL, " ", &ptr);
 
-
  if(len_str != NULL)
     len = atol(len_str);
-
 
   if(str_equals(operation, "REGISTER"))
     register_(connfd, currentUser, name);

@@ -17,6 +17,7 @@ char* getUserPath(char* username);
 bool createFile(char* filename, void* data, char* username, size_t size);
 bool sendFile(char* src, char* dest);
 bool str_equals(char* a, char* b);
+void printLastErrorMsg();
 
 int os_connect(char *name);
 int os_store(char* name, void* block, size_t len);

@@ -24,10 +24,10 @@
 
 void *thread_worker(void *arg) {
   long connfd = (long)arg;
+  //fcntl(connfd, F_SETFL, O_NONBLOCK);
+
   sigset_t set;
 
-
-  sigemptyset(&set);
   sigfillset(&set);
   pthread_sigmask(SIG_BLOCK, &set, NULL);
 
@@ -39,13 +39,13 @@ void *thread_worker(void *arg) {
   n_clients++;
   pthread_mutex_unlock(&client_mtx);
 
-  int u=0;
+  int u = 0;
 
   while(running){
     u = read(connfd, header, MAX_HEADER_SIZE);
     if(u <= 0)break;
     parse_request(connfd,header,currentUser);
-    memset(header,'\0',MAX_HEADER_SIZE);
+    memset(header, '\0', MAX_HEADER_SIZE);
   }
 
   pthread_mutex_lock(&client_mtx);

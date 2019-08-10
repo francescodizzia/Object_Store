@@ -14,9 +14,11 @@
 #include <stdbool.h>
 
 
-#define ASSERT_BOOL(c){\
-  if(!c)\
+#define ASSERT_BOOL(x,c){\
+  x = c;\
+  if(!x){\
     return false;\
+  }\
 }
 
 char* makeTestArray1(int N){
@@ -36,8 +38,9 @@ bool test1(char* user){
   memset(obj_name,'\0',128);
 
   int size = 0;
+  bool connected,stored,disconnected;
 
-  ASSERT_BOOL(os_connect(user));
+  ASSERT_BOOL(connected, os_connect(user));
 
   for(int i = 0; i < 20; i++){
     size = 100 + ((i*17)*(i*17));
@@ -46,18 +49,18 @@ bool test1(char* user){
 
     sprintf(obj_name,"object_%d",i+1);
 
-    ASSERT_BOOL(os_store(obj_name, makeTestArray1(size), size));
+    ASSERT_BOOL(stored, os_store(obj_name, makeTestArray1(size), size));
   }
 
-  ASSERT_BOOL(os_disconnect());
+  ASSERT_BOOL(disconnected, os_disconnect());
 
   return true;
 }
 
 bool test2(char* user){
+  bool connected,disconnected;
 
-
-  ASSERT_BOOL(os_connect(user));
+  ASSERT_BOOL(connected, os_connect(user));
 
   void *retrieved_obj = NULL;
   char obj_name[128];
@@ -72,15 +75,19 @@ bool test2(char* user){
       size = 100000;
 
     retrieved_obj = os_retrieve(obj_name);
-    ASSERT_BOOL(retrieved_obj);
-
-    if(memcmp(retrieved_obj, makeTestArray1(size), size) != 0)
+    if(retrieved_obj == NULL){
       return false;
+    }
+
+    if(memcmp(retrieved_obj, makeTestArray1(size), size) != 0){
+      printf("ERROR: contents not equal\n");
+      return false;
+    }
 
     memset(obj_name, '\0', 128);
   }
 
-  ASSERT_BOOL(os_disconnect());
+  ASSERT_BOOL(disconnected, os_disconnect());
 
   return true;
 }
@@ -88,46 +95,30 @@ bool test2(char* user){
 bool test3(char* user){
   char obj_name[128];
   memset(obj_name, '\0', 128);
+  bool connected,deleted,disconnected;
 
-  ASSERT_BOOL(os_connect(user));
+
+  ASSERT_BOOL(connected, os_connect(user));
 
   for(int i = 0; i < 20; i++){
     sprintf(obj_name,"object_%d",i+1);
-    ASSERT_BOOL(os_delete(obj_name));
+    ASSERT_BOOL(deleted, os_delete(obj_name));
     memset(obj_name, '\0', 128);
   }
 
-  ASSERT_BOOL(os_disconnect());
+  ASSERT_BOOL(disconnected, os_disconnect());
 
   return true;
 }
 
-void signalHandler(int signal) {
-    if(signal == SIGPIPE)
-      ;
-    else if(signal == SIGINT)
-      write(1, "Ho ricevuto SIGINT\n",19);
-
-}
 
 int main(int argc,char* argv[]){
 
   signal(SIGPIPE, SIG_IGN);
 
-    struct sigaction s;
-
-    memset(&s, 0, sizeof(s));
-    s.sa_handler = signalHandler;
-    s.sa_flags=SA_RESTART;
-
-    sigfillset(&s.sa_mask);
-
-    sigaction(SIGINT,  &s, NULL);
-    sigaction(SIGUSR1, &s, NULL);
-
   if(argc < 3){
     printf("usage\n");  //TODO
-    return 1;
+    return -1;
   }
 
   char* user = strdup(argv[1]);
@@ -143,9 +134,10 @@ int main(int argc,char* argv[]){
 
   if(result)
     printf("[OK] Test %d passato con successo! [utente: %s]\n", test_code, user);
-  else
+  else{
     printf("[KO] Test %d fallito... [utente: %s]\n", test_code, user);
-
+    printLastErrorMsg();
+  }
 
   return 0;
 }

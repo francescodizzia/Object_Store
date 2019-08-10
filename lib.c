@@ -19,9 +19,7 @@
 #include <lib.h>
 #include <hashtable.h>
 
-#define FD_NULL (-1)
-
-int fd = FD_NULL;
+int fd = -1;
 
 
 #define REGISTER_LENGTH 12 //include \0, gli altri no
@@ -30,6 +28,7 @@ int fd = FD_NULL;
 #define DELETE_LENGTH 9
 #define DATA_MSG_LENGTH 8
 
+char last_error_msg[256];
 
 size_t getNumberOfDigits(size_t k){
   int len;
@@ -76,6 +75,11 @@ bool createFile(char* filename, void* data, char* username, size_t size){
  return true;
 }
 
+void printLastErrorMsg(){
+  printf("ERROR: %s\n", last_error_msg);
+  memset(last_error_msg, '\0', 256);
+}
+
 
 bool getResponseMsg(){
   char response_buf[MAX_RESPONSE_SIZE];
@@ -84,6 +88,10 @@ bool getResponseMsg(){
 
   if(strncmp("OK",response_buf,2) == 0)
    return true;
+  else{
+    memset(last_error_msg, '\0', 256);
+    strcpy(last_error_msg, response_buf);
+  }
 
  return false;
 }
@@ -106,6 +114,11 @@ void *getDataResponseMsg(){
 
   if(len_str != NULL) len = atol(len_str);
 
+  if(len == 0){
+    memset(last_error_msg, '\0', 256);
+    strcpy(last_error_msg, "Cannot retrieve object\n");
+    return NULL;
+  }
 
   void *data = calloc(len,1);
   int b = MAX_RESPONSE_SIZE-DATA_MSG_LENGTH-getNumberOfDigits(len);
@@ -197,7 +210,7 @@ int os_disconnect(){
 
  bool response = getResponseMsg();
  int c = close(fd);
- fd = FD_NULL;
+ fd = -1;
 
  if(c == -1)return false;
 
