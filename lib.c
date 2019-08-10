@@ -108,7 +108,7 @@ void *getDataResponseMsg(){
 
   if(first_str == NULL || strcmp(first_str,"KO") == 0){
     memset(last_error_msg, '\0', 256);
-    strcpy(last_error_msg, response_buf);
+    strcpy(last_error_msg, "KO [Can't retrieve the object]");
     return NULL;
   }
 
