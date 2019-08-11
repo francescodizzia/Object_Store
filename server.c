@@ -52,17 +52,17 @@ void cleanup() {
   unlink(SOCKNAME);
 }
 
-size_t total_size = 0;
-size_t number_objects = 0;
-size_t number_users = -1;
+static size_t total_size = 0;
+static size_t objects = 0;
+static size_t folders = -1;
 
 
 int setStats(const char* filename, const struct stat* stats, int type){
 
   if(type == FTW_F) // E' un file
-    number_objects++;
+    objects++;
   else if(type == FTW_D) //E' una directory
-    number_users++;
+    folders++;
 
   total_size += stats->st_size;
   return 0;
@@ -121,27 +121,28 @@ void spawn_thread2(void* ptr, void *(*startFunction) (void *)) {
 
 void resetStats(){
   total_size = 0;
-  number_objects = 0;
-  number_users = -1;
+  objects = 0;
+  folders = -1;
 }
 
 void printStats(){
 
-  pthread_mutex_lock(&fs_mtx);
-    ftw("./data/",setStats,0);
-  pthread_mutex_unlock(&fs_mtx);
+    pthread_mutex_lock(&client_mtx);
 
-  float size_in_MB = ((float)total_size)/ONE_MB;
+    int k = ftw("./data/",setStats,0);
 
-  pthread_mutex_lock(&client_mtx);
-    for(int i = 0; i < 50; i++)printf("*");
-    printf("\nSize totale degli oggetti: %lu byte (%.2f MB)\nNumero di oggetti: %lu\nCartelle: %lu\nClient connessi: %d\n",total_size, size_in_MB, number_objects,number_users,n_clients);
-    for(int i = 0; i < 50; i++)printf("*");
-    printf("\n");
-  pthread_mutex_unlock(&client_mtx);
+  if(k == -1){write(1,"errore\n",10);resetStats();pthread_mutex_unlock(&client_mtx);return;}
 
-  resetStats();
 
+    float size_in_MB = ((float)total_size)/ONE_MB;
+    char string[1025];
+    memset(string, '\0',1025);
+    sprintf(string,"\n**************************************************\nSize totale degli oggetti: %lu byte (%.2f MB)\nNumero di oggetti: %lu\nCartelle: %lu\nClient connessi: %d\n**************************************************\n",total_size, size_in_MB, objects,folders,n_clients);
+    resetStats();
+
+
+  write(1,string,strlen(string));
+    pthread_mutex_unlock(&client_mtx);
 
 }
 

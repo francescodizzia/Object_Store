@@ -99,6 +99,7 @@ bool getResponseMsg(){
 
 void *getDataResponseMsg(){
   char response_buf[MAX_RESPONSE_SIZE];
+
   memset(response_buf, '\0', MAX_RESPONSE_SIZE);
   read(fd,response_buf,MAX_RESPONSE_SIZE);
 

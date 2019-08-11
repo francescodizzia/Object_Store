@@ -25,11 +25,12 @@
 void *thread_worker(void *arg) {
   long connfd = (long)arg;
   //fcntl(connfd, F_SETFL, O_NONBLOCK);
-
+  /*
   sigset_t set;
 
   sigfillset(&set);
   pthread_sigmask(SIG_BLOCK, &set, NULL);
+  */
 
   char *header = calloc(MAX_HEADER_SIZE, sizeof(char));
   char currentUser[USER_MAX_LENGTH];

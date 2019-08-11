@@ -63,9 +63,9 @@ void register_(int connfd, char* currentUser, char* name){
 
   char* user_path = getUserPath(name);
 
-  pthread_mutex_lock(&fs_mtx);
+//  pthread_mutex_lock(&fs_mtx);
     int result = mkdir(user_path,  0755);
-  pthread_mutex_unlock(&fs_mtx);
+//  pthread_mutex_unlock(&fs_mtx);
 
   free(user_path);
 
@@ -95,9 +95,9 @@ void store(int connfd, char* currentUser ,char* name, long int len, char* newlin
   if(currentUser[0] == '\0')
     sendKO(connfd, currentUser, "STORE", "User not registered");
   else{
-    pthread_mutex_lock(&fs_mtx);
+  //  pthread_mutex_lock(&fs_mtx);
       int success = createFile(name,data,currentUser,len);
-    pthread_mutex_unlock(&fs_mtx);
+  //  pthread_mutex_unlock(&fs_mtx);
 
     if(success)
       sendOK(connfd, currentUser, "STORE");
@@ -115,7 +115,7 @@ void retrieve(int connfd, char* currentUser, char* name){
   strcat(file_path,user_path);
   strcat(file_path,name);
 
-  pthread_mutex_lock(&fs_mtx);
+  //pthread_mutex_lock(&fs_mtx);
     FILE *f = fopen(file_path, "rb");
 
     if(f){
@@ -148,7 +148,7 @@ void retrieve(int connfd, char* currentUser, char* name){
  	  }else{
       sendKO(connfd, currentUser, "RETRIEVE", "Can't retrieve the object");
     }
-  pthread_mutex_unlock(&fs_mtx);
+  //pthread_mutex_unlock(&fs_mtx);
 
   free(user_path);
   free(file_path);
@@ -162,9 +162,9 @@ void delete(int connfd, char* currentUser, char* name){
   strcat(file_path,user_path);
   strcat(file_path,name);
 
-  pthread_mutex_lock(&fs_mtx);
+  //pthread_mutex_lock(&fs_mtx);
     bool success = (remove(file_path) == 0);
-  pthread_mutex_unlock(&fs_mtx);
+  //pthread_mutex_unlock(&fs_mtx);
 
   free(user_path);
   free(file_path);

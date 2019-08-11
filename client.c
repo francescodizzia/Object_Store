@@ -21,7 +21,7 @@
   }\
 }
 
-char* makeTestArray1(int N){
+char* makeTestArray(int N){
   char *A = calloc(N, 1);
 
     int j = 0;
@@ -39,6 +39,7 @@ bool test1(char* user){
 
   int size = 0;
   bool connected,stored,disconnected;
+  char* test;
 
   ASSERT_BOOL(connected, os_connect(user));
 
@@ -49,10 +50,13 @@ bool test1(char* user){
 
     sprintf(obj_name,"object_%d",i+1);
 
-    ASSERT_BOOL(stored, os_store(obj_name, makeTestArray1(size), size));
+    test = makeTestArray(size);
+    ASSERT_BOOL(stored, os_store(obj_name, test, size));
+    free(test);
   }
 
   ASSERT_BOOL(disconnected, os_disconnect());
+
 
   return true;
 }
@@ -67,6 +71,7 @@ bool test2(char* user){
   memset(obj_name, '\0', 128);
 
   int size = 0;
+  char *test;
 
   for(int i = 0; i < 20; i++){
     sprintf(obj_name,"object_%d",i+1);
@@ -79,12 +84,16 @@ bool test2(char* user){
       return false;
     }
 
-    if(memcmp(retrieved_obj, makeTestArray1(size), size) != 0){
+
+    test = makeTestArray(size);
+    if(memcmp(retrieved_obj, test, size) != 0){
       printf("ERROR: contents not equal\n");
       return false;
     }
 
     memset(obj_name, '\0', 128);
+    free(retrieved_obj);
+    free(test);
   }
 
   ASSERT_BOOL(disconnected, os_disconnect());
@@ -117,7 +126,7 @@ int main(int argc,char* argv[]){
   signal(SIGPIPE, SIG_IGN);
 
   if(argc < 3){
-    printf("usage\n"); 
+    printf("usage\n");
     return -1;
   }
 
@@ -139,5 +148,6 @@ int main(int argc,char* argv[]){
     printLastErrorMsg();
   }
 
+  free(user);
   return 0;
 }
