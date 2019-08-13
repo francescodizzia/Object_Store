@@ -1,10 +1,7 @@
 #!/bin/bash
-
-PID="$(ps aux | grep ./server | grep -v grep | awk '{print $2}')"
-
 exec > testout.log
 
-for i in {1..500}
+for i in {1..50}
 do
   ./client "user_${i}" 1 &
 done
@@ -21,5 +18,3 @@ do
   fi
 done
 wait
-
-kill -SIGUSR1 ${PID}

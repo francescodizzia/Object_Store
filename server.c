@@ -16,7 +16,6 @@
 #include <fcntl.h>
 #include <ftw.h>
 
-#include <lib.h>
 #include <thread_worker.h>
 #include <hashtable.h>
 
@@ -29,32 +28,21 @@
 
 #define ONE_MB 1000000
 
-
-
-
-
 volatile sig_atomic_t running = true;
-volatile sig_atomic_t print_stats = false;
 pthread_mutex_t client_mtx = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t fs_mtx = PTHREAD_MUTEX_INITIALIZER;
-
-
-pthread_cond_t tree_walk_cond;
 pthread_cond_t empty;
-
-sigset_t set;
 
 int n_clients = 0;
 hashtable HT;
-
 
 void cleanup() {
   unlink(SOCKNAME);
 }
 
-static size_t total_size = 0;
-static size_t objects = 0;
-static size_t folders = -1;
+size_t total_size = 0;
+size_t objects = 0;
+size_t folders = -1;
 
 
 int setStats(const char* filename, const struct stat* stats, int type){
@@ -127,23 +115,20 @@ void resetStats(){
 
 void printStats(){
 
-    pthread_mutex_lock(&client_mtx);
+  int k = ftw("./data/",setStats,0);
 
-    int k = ftw("./data/",setStats,0);
+  if(k == -1){write(1,"errore\n",10);resetStats();return;}
 
-  if(k == -1){write(1,"errore\n",10);resetStats();pthread_mutex_unlock(&client_mtx);return;}
+  float size_in_MB = ((float)total_size)/ONE_MB;
+  char string[512];
+  memset(string, '\0',512);
 
-
-    float size_in_MB = ((float)total_size)/ONE_MB;
-    char string[1025];
-    memset(string, '\0',1025);
-    sprintf(string,"\n**************************************************\nSize totale degli oggetti: %lu byte (%.2f MB)\nNumero di oggetti: %lu\nCartelle: %lu\nClient connessi: %d\n**************************************************\n",total_size, size_in_MB, objects,folders,n_clients);
-    resetStats();
-
+  pthread_mutex_lock(&client_mtx);
+  sprintf(string,"\n**************************************************\nSize totale degli oggetti: %lu byte (%.2f MB)\nNumero di oggetti: %lu\nCartelle: %lu\nClient connessi: %d\n**************************************************\n",total_size, size_in_MB, objects,folders,n_clients);
 
   write(1,string,strlen(string));
-    pthread_mutex_unlock(&client_mtx);
-
+  resetStats();
+  pthread_mutex_unlock(&client_mtx);
 }
 
 
@@ -171,7 +156,6 @@ int main(){
   atexit(cleanup);
 
   sigset_t set;
-  //sigemptyset(&set);
   sigfillset(&set);
   pthread_sigmask(SIG_SETMASK, &set, NULL);
 
@@ -186,21 +170,15 @@ int main(){
   bind(server_fd, (struct sockaddr *)&sa, sizeof(sa));
   listen(server_fd, SOMAXCONN);
 
-  int connfd;
-
-
-
-  HT = createHashTable(HASH_TABLE_SIZE);
-
-  int sret;
-
+  int sret, connfd;
   struct timeval timer;
-
-
   fd_set fds,r_fds;
 
   FD_ZERO(&fds);
   FD_SET(server_fd, &fds);
+
+
+  HT = createHashTable(HASH_TABLE_SIZE);
 
   while(running){
     timer.tv_sec = 0;
@@ -209,24 +187,22 @@ int main(){
 
     sret = select(server_fd+1, &r_fds, NULL, NULL, &timer);
 
-    if (sret == -1) {
+    if(sret == -1)
 	    break;
-	   }
 
      else if(sret > 0){
 		    connfd = accept(server_fd, (struct sockaddr*)NULL ,NULL);
         spawn_thread(connfd, thread_worker);
-    }
+     }
 
   }
-
 
   pthread_mutex_lock(&client_mtx);
     if(n_clients > 0){
       printf("[X] WAITING FOR THREADS\n");
-    pthread_cond_wait(&empty, &client_mtx);
-    printf("[+] DONE\n");
-  }
+      pthread_cond_wait(&empty, &client_mtx);
+      printf("[+] DONE\n");
+    }
   pthread_mutex_unlock(&client_mtx);
 
   freeHashTable(&HT);

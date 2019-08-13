@@ -12,6 +12,9 @@ USERS_FAIL="$(grep -s "fallito" testout.log | cut -d "[" -f 3 | cut -d " " -f 2 
 
 if [ "${FAILED_NUMER}" != "0" ]
 then
-ERRORS="$(grep -s "ERROR" testout.log | cut -d ":" -f 2 | cut -c 2-)"
-printf "\n\nUtenti che hanno fallito:\n${USERS_FAIL}\n\nErrori riscontrati (vedere il file di log):\n${ERRORS}\n"
+printf "\n\nUtenti che hanno fallito (guardare il file di log per maggiori dettagli):\n${USERS_FAIL}\n"
 fi
+
+PID="$(ps aux | grep ./server | grep -v grep | awk '{print $2}')"
+
+kill -SIGUSR1 ${PID}

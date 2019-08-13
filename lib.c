@@ -19,8 +19,6 @@
 #include <lib.h>
 #include <hashtable.h>
 
-int fd = -1;
-
 
 #define REGISTER_LENGTH 12 //include \0, gli altri no
 #define STORE_LENGTH 10
@@ -28,6 +26,7 @@ int fd = -1;
 #define DELETE_LENGTH 9
 #define DATA_MSG_LENGTH 8
 
+int fd = -1;
 char last_error_msg[256];
 
 size_t getNumberOfDigits(size_t k){
@@ -50,12 +49,9 @@ char* getUserPath(char* username){
 }
 
 bool createFile(char* filename, void* data, char* username, size_t size){
- char path[MAX_PATH_SIZE];
- memset(path,'\0',MAX_PATH_SIZE);
- strcpy(path,DATA_DIRECTORY);
+ char *path;
+ path = getUserPath(username);
 
- strcat(path,username);
- strcat(path,"/");
  strcat(path,filename);
 
  int new_fd = open(path, O_CREAT | O_WRONLY | O_TRUNC, S_IRUSR | S_IWUSR);
@@ -65,12 +61,10 @@ bool createFile(char* filename, void* data, char* username, size_t size){
 
  int w = writen(new_fd, data, size);
 
- if(w == -1){
-  printf("INCREDIBBBILE\n"); //TODO
+ if(w == -1)
   return false;
-}
 
-
+ free(path);
  close(new_fd);
  return true;
 }
@@ -107,7 +101,7 @@ void *getDataResponseMsg(){
   long int len = 0;
   char* first_str =  strtok_r(response_buf, " ", &ptr);
 
-  if(first_str == NULL || strcmp(first_str,"KO") == 0){
+  if(first_str == NULL || str_equals(first_str,"KO")){
     memset(last_error_msg, '\0', 256);
     strcpy(last_error_msg, "KO [Can't retrieve the object]");
     return NULL;
@@ -131,7 +125,7 @@ void *getDataResponseMsg(){
   if(len-b > 0){
     memcpy(data,(newline+2),b);
     n = readn(fd, ((char*) data)+b,len-b);
-    if(n <= 0){printf("PROBLEMA");return NULL;}  //TODO
+    if(n <= 0)return NULL;
   }
   else memcpy(data,(void*)(newline+2),len);
 
@@ -170,6 +164,7 @@ int os_store(char *name, void *block, size_t len) {
 
   size_t store_size = STORE_LENGTH + strlen(name) + getNumberOfDigits(len);
   char* buff = calloc(store_size+1, sizeof(char));
+  if(!buff)return false;
 
   sprintf(buff,"STORE %s %lu \n ",name, len);
 
@@ -189,10 +184,12 @@ void *os_retrieve(char* name){
   int N = strlen(name) + RETRIEVE_LENGTH + 1;
   char* buff = calloc(N, sizeof(char));
   sprintf(buff, "RETRIEVE %s \n", name);
+  if(!buff) return NULL;
 
-  writen(fd, buff, N-1);
+  int w = writen(fd, buff, N-1);
   free(buff);
 
+  if(w == -1)return NULL;
   return getDataResponseMsg();
 }
 
@@ -201,10 +198,12 @@ int os_delete(char* name){
   char* buff = calloc(N, sizeof(char));
   sprintf(buff,"DELETE %s \n", name);
 
-  writen(fd, buff, N-1);
+  int w = writen(fd, buff, N-1);
   free(buff);
 
- return getResponseMsg();
+  if(w == -1)return false;
+
+  return getResponseMsg();
 }
 
 
@@ -247,6 +246,7 @@ bool sendFile(char* src, char* dest){
 
    size_t size = finfo.st_size;
    char *buffer = calloc(size, sizeof(char));
+   if(!buffer)return false;
    fread(buffer, size, 1, f);
    result = os_store(dest,buffer, size);
    free(buffer);

@@ -63,20 +63,17 @@ void register_(int connfd, char* currentUser, char* name){
 
   char* user_path = getUserPath(name);
 
-//  pthread_mutex_lock(&fs_mtx);
     int result = mkdir(user_path,  0755);
-//  pthread_mutex_unlock(&fs_mtx);
+    free(user_path);
 
-  free(user_path);
-
-  if(result == 0) //Successo nella creazione della dir
-    sendOK(connfd, currentUser, "REGISTER");
-  else{
-    if(errno == EEXIST) //La directory esiste gia', ma non e' un problema
+    if(result == 0) //Successo nella creazione della dir
       sendOK(connfd, currentUser, "REGISTER");
-    else
-      sendKO(connfd, currentUser, "REGISTER", NULL);
-  }
+    else{
+      if(errno == EEXIST) //La directory esiste gia', ma non e' un problema
+        sendOK(connfd, currentUser, "REGISTER");
+      else
+        sendKO(connfd, currentUser, "REGISTER", NULL);
+    }
 
 }
 
@@ -88,21 +85,17 @@ void store(int connfd, char* currentUser ,char* name, long int len, char* newlin
   if(len-b > 0){
     memcpy(data,(newline+2),b);
     n = readn(connfd, ((char*) data)+b,len-b);
-    if(n <= 0){printf("PROBLEMA");return;}  //TODO
+    if(n <= 0) return;
   }
   else memcpy(data,(void*)(newline+2),len);
 
   if(currentUser[0] == '\0')
     sendKO(connfd, currentUser, "STORE", "User not registered");
   else{
-  //  pthread_mutex_lock(&fs_mtx);
-      int success = createFile(name,data,currentUser,len);
-  //  pthread_mutex_unlock(&fs_mtx);
-
-    if(success)
-      sendOK(connfd, currentUser, "STORE");
-    else
-      sendKO(connfd, currentUser, "STORE", NULL);
+      if(createFile(name,data,currentUser,len))
+        sendOK(connfd, currentUser, "STORE");
+      else
+        sendKO(connfd, currentUser, "STORE", NULL);
   }
 
   free(data);
@@ -115,40 +108,38 @@ void retrieve(int connfd, char* currentUser, char* name){
   strcat(file_path,user_path);
   strcat(file_path,name);
 
-  //pthread_mutex_lock(&fs_mtx);
-    FILE *f = fopen(file_path, "rb");
+  FILE *f = fopen(file_path, "rb");
 
-    if(f){
-      int d = fileno(f);
+  if(f){
+    int d = fileno(f);
 
-      struct stat finfo;
-      fstat(d, &finfo);
+    struct stat finfo;
+    fstat(d, &finfo);
 
-      size_t size = finfo.st_size;
-      void *block = calloc(size, 1);
+    size_t size = finfo.st_size;
+    void *block = calloc(size, 1);
 
-      fread(block, size, 1, f);
+    fread(block, size, 1, f);
 
-      int N = 8 + getNumberOfDigits(size);
-      char* buff = calloc(N + 1, sizeof(char));
+    int N = 8 + getNumberOfDigits(size);
+    char* buff = calloc(N + 1, sizeof(char));
 
-      sprintf(buff,"DATA %lu \n ", size);
+    sprintf(buff,"DATA %lu \n ", size);
 
-      char* tmp = calloc(N+1+size,sizeof(char));
-      memcpy(tmp,buff,N);
-      memcpy(tmp+N,block,size);
+    char* tmp = calloc(N+1+size,sizeof(char));
+    memcpy(tmp,buff,N);
+    memcpy(tmp+N,block,size);
 
-      writen(connfd,tmp,N+size);
-      fprintf(target_output,"user %-15s fd: %-10dop: %-10s\tOK \n",  currentUser, connfd, "RETRIEVE");
+    writen(connfd,tmp,N+size);
+    fprintf(target_output,"user %-15s fd: %-10dop: %-10s\tOK \n",  currentUser, connfd, "RETRIEVE");
 
-      free(buff);
-      free(tmp);
-      free(block);
-      fclose(f);
- 	  }else{
+    free(buff);
+    free(tmp);
+    free(block);
+    fclose(f);
+ 	  }
+    else
       sendKO(connfd, currentUser, "RETRIEVE", "Can't retrieve the object");
-    }
-  //pthread_mutex_unlock(&fs_mtx);
 
   free(user_path);
   free(file_path);
@@ -156,21 +147,19 @@ void retrieve(int connfd, char* currentUser, char* name){
 }
 
 
-void delete(int connfd, char* currentUser, char* name){
+void delete(int connfd, char* currentUser, char* obj_name){
   char* user_path = getUserPath(currentUser);
-  char* file_path = calloc(strlen(user_path)+strlen(name)+1 ,sizeof(char));
+  char* file_path = calloc(strlen(user_path)+strlen(obj_name)+1 ,sizeof(char));
   strcat(file_path,user_path);
-  strcat(file_path,name);
+  strcat(file_path,obj_name);
 
-  //pthread_mutex_lock(&fs_mtx);
-    bool success = (remove(file_path) == 0);
-  //pthread_mutex_unlock(&fs_mtx);
-
-  free(user_path);
-  free(file_path);
+  bool success = (remove(file_path) == 0);
 
   if(success) sendOK(connfd, currentUser, "DELETE");
   else sendKO(connfd, currentUser, "DELETE", NULL);
+
+  free(user_path);
+  free(file_path);
 }
 
 
@@ -199,6 +188,5 @@ void parse_request(int connfd, char *str, char* currentUser){
     delete(connfd, currentUser, name);
   else if(str_equals(operation, "LEAVE"))
     leave(connfd, currentUser);
-
 
 }
