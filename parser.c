@@ -206,10 +206,13 @@ void parse_request(int connfd, char *str, char* currentUser){
  char* len_str = strtok_r(NULL, " ", &ptr);
  char* newline = strtok_r(NULL, " ", &ptr);
 
- //Converto la stringa relativa alla lunghezza in un numero
+ //Converto la stringa che descrive la lunghezza in un numero
  if(len_str != NULL)
   len = atol(len_str);
 
+
+ //Per ogni operazione decodificata vado ad eseguire la rispettiva procedura che
+ //si occupa di fare tutto il necessario
  if(str_equals(operation, "REGISTER"))
   register_(connfd, currentUser, name);
  else if(str_equals(operation, "STORE"))
