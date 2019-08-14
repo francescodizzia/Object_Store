@@ -22,55 +22,83 @@
 #define target_output stdout
 
 
+//Procedura che invia come risposta 'OK' al client e stampa alcune informazioni utili a schermo
 void sendOK(int connfd, char* currentUser, char* operation){
   writen(connfd,"OK \n",4);
   fprintf(target_output,"user %-15s fd: %-10dop: %-10s\tOK \n",  currentUser, connfd, operation);
 }
 
+//Stessa cosa con 'KO', qui però devo devo formattare diversamente la risposta
 void sendKO(int connfd, char* currentUser, char* operation, char* message){
   char* toPrint = NULL;
 
+  //Posso decidere se inviare insieme a 'KO' un messaggio personalizzato sul momento
+  //oppure uno standard (KO + errno in versione testuale)
   if(message == NULL)
     toPrint = strerror(errno);
   else toPrint = message;
 
+  //Preparo il buffer per formattare la stringa
   char fail_buf[MAX_RESPONSE_SIZE];
   memset(fail_buf,'\0',MAX_RESPONSE_SIZE);
 
+  //Formatto la stringa usando il valore settato precedentemente a seconda dei due casi
   sprintf(fail_buf,"KO [%s] \n", toPrint);
+
+  //Invio il KO 'completo'
   writen(connfd,fail_buf,strlen(fail_buf));
+
+  //Stampo alcune informazioni utili a schermo
   fprintf(target_output,"user %-15s fd: %-10dop: %-10s\t%s",currentUser, connfd,operation,fail_buf);
 }
 
-
+//Procedura che si occupa della disconnessione dell'utente
 void leave(int connfd, char* currentUser){
+  //Vado a rimuovere l'utente dalla tabella hash, in questo modo do la possibilita'
+  //all'utente di riconnettersi (se lo desidera) in un secondo momento
   removeHashTable(&HT,currentUser);
   memset(currentUser, '\0', USER_MAX_LENGTH);
+  //Mando la risposta (positiva) al client
   sendOK(connfd, currentUser, "LEAVE");
 }
 
 
+//Procedura che si occupa della registrazione dell'utente
 void register_(int connfd, char* currentUser, char* name){
+  //Se è già presente nella tabella hash, vuol dire che c'è un altro client
+  //attualmente connesso con lo stesso username: la procedura fallisce mandando KO
   if(isInHashTable(HT,name)){
     sendKO(connfd,name,"REGISTER","Multiple clients with the same username");
     return;
   }
 
+
+  //Se l'utente non è stato ancora registrato, posso allora procedere con
+  //la registrazione (e conseguente inserimento nella tabella)
   if(currentUser[0] == '\0'){
     strcpy(currentUser,name);
     insertHashTable(&HT,currentUser);
   }
 
-  char* user_path = getUserPath(name);
+/////////////////////////////////////////////////////////////////TODO ELSE///////////////////////////////////////////
 
+
+    //Ottengo il path relativo all'utente
+    char* user_path = getUserPath(name);
+
+    //Provo a creare la direcytory
     int result = mkdir(user_path,  0755);
     free(user_path);
 
-    if(result == 0) //Successo nella creazione della dir
+    //Se ho avuto successo nella creazione, mando OK
+    if(result == 0)
       sendOK(connfd, currentUser, "REGISTER");
     else{
-      if(errno == EEXIST) //La directory esiste gia', ma non e' un problema
+      //Se fallisco nella creazione, ma è perché la directory esiste già, va tutto bene
+      //(l'utente si era già registrato in precedenza)
+      if(errno == EEXIST)
         sendOK(connfd, currentUser, "REGISTER");
+      //Se fallisco in ogni altro caso, vuol dire che ho avuto un problema e mando KO
       else
         sendKO(connfd, currentUser, "REGISTER", NULL);
     }
@@ -163,30 +191,34 @@ void delete(int connfd, char* currentUser, char* obj_name){
 }
 
 
+//Procedura relativa al parsing delle richieste
 void parse_request(int connfd, char *str, char* currentUser){
  if(str == NULL || str[0] == '\0')return;
 
+ //Puntatore 'token' necessario per la strtok
  char* ptr = NULL;
  long int len = 0;
 
+ //Spezzo la stringa in funzione del protocollo
  char* operation = strtok_r(str, " ", &ptr);
  if(operation == NULL)return;
  char* name = strtok_r(NULL, " ", &ptr);
  char* len_str = strtok_r(NULL, " ", &ptr);
  char* newline = strtok_r(NULL, " ", &ptr);
 
+ //Converto la stringa relativa alla lunghezza in un numero
  if(len_str != NULL)
-    len = atol(len_str);
+  len = atol(len_str);
 
-  if(str_equals(operation, "REGISTER"))
-    register_(connfd, currentUser, name);
-  else if(str_equals(operation, "STORE"))
-    store(connfd, currentUser, name, len, newline);
-  else if(str_equals(operation, "RETRIEVE"))
-    retrieve(connfd, currentUser, name);
-  else if(str_equals(operation, "DELETE"))
-    delete(connfd, currentUser, name);
-  else if(str_equals(operation, "LEAVE"))
-    leave(connfd, currentUser);
+ if(str_equals(operation, "REGISTER"))
+  register_(connfd, currentUser, name);
+ else if(str_equals(operation, "STORE"))
+  store(connfd, currentUser, name, len, newline);
+ else if(str_equals(operation, "RETRIEVE"))
+  retrieve(connfd, currentUser, name);
+ else if(str_equals(operation, "DELETE"))
+  delete(connfd, currentUser, name);
+ else if(str_equals(operation, "LEAVE"))
+  leave(connfd, currentUser);
 
 }

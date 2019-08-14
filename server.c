@@ -19,7 +19,6 @@
 #include <thread_worker.h>
 #include <hashtable.h>
 
-
 #define MAX_ACTION_LENGTH 9
 #define MAX_NAME_LENGTH 101
 
@@ -57,6 +56,32 @@ int setStats(const char* filename, const struct stat* stats, int type){
 }
 
 
+void resetStats(){
+  total_size = 0;
+  objects = 0;
+  folders = -1;
+}
+
+void printStats(){
+
+  int k = ftw("./data/",setStats,0);
+
+  if(k == -1){write(1,"errore\n",7);resetStats();return;}
+
+  float size_in_MB = ((float)total_size)/ONE_MB;
+  char string[512];
+  memset(string, '\0',512);
+
+  pthread_mutex_lock(&client_mtx);
+  sprintf(string,"\n**************************************************\nSize totale degli oggetti: %lu byte (%.2f MB)\nNumero di oggetti: %lu\nCartelle: %lu\nClient connessi: %d\n**************************************************\n",total_size, size_in_MB, objects,folders,n_clients);
+
+  write(1,string,strlen(string));
+  resetStats();
+  pthread_mutex_unlock(&client_mtx);
+}
+
+
+
 
 void spawn_thread(long connfd, void *(*startFunction) (void *)) {
   pthread_attr_t thattr;
@@ -84,7 +109,7 @@ void spawn_thread(long connfd, void *(*startFunction) (void *)) {
   }
 }
 
-void spawn_thread2(void* ptr, void *(*startFunction) (void *)) {
+void spawn_signalThread(void* ptr, void *(*startFunction) (void *)) {
   pthread_attr_t thattr;
   pthread_t thid;
 
@@ -107,31 +132,6 @@ void spawn_thread2(void* ptr, void *(*startFunction) (void *)) {
   }
 }
 
-void resetStats(){
-  total_size = 0;
-  objects = 0;
-  folders = -1;
-}
-
-void printStats(){
-
-  int k = ftw("./data/",setStats,0);
-
-  if(k == -1){write(1,"errore\n",10);resetStats();return;}
-
-  float size_in_MB = ((float)total_size)/ONE_MB;
-  char string[512];
-  memset(string, '\0',512);
-
-  pthread_mutex_lock(&client_mtx);
-  sprintf(string,"\n**************************************************\nSize totale degli oggetti: %lu byte (%.2f MB)\nNumero di oggetti: %lu\nCartelle: %lu\nClient connessi: %d\n**************************************************\n",total_size, size_in_MB, objects,folders,n_clients);
-
-  write(1,string,strlen(string));
-  resetStats();
-  pthread_mutex_unlock(&client_mtx);
-}
-
-
 void* signal_handler (void* ptr) {
     sigset_t set = *((sigset_t*) ptr);
 
@@ -144,7 +144,7 @@ void* signal_handler (void* ptr) {
         else //Ogni altro segnale fa chiudere in modo 'gentile' il server e i client
           running = false;
     }
-    printf("[objectstore] Signal handling thread stopped\n");
+    printf("Sto terminando il thread dei segnali...\n");
 
     return NULL;
 }
@@ -159,7 +159,8 @@ int main(){
   sigfillset(&set);
   pthread_sigmask(SIG_SETMASK, &set, NULL);
 
-  spawn_thread2(&set, signal_handler);
+  spawn_signalThread(&set, signal_handler);
+
 
   int server_fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
@@ -199,16 +200,15 @@ int main(){
 
   pthread_mutex_lock(&client_mtx);
     if(n_clients > 0){
-      printf("[X] WAITING FOR THREADS\n");
+      printf("Sto aspettando la terminazione dei vari thread...\n");
       pthread_cond_wait(&empty, &client_mtx);
-      printf("[+] DONE\n");
     }
   pthread_mutex_unlock(&client_mtx);
 
   freeHashTable(&HT);
   close(server_fd);
 
-  printf("[+] Tutti i thread sono stati terminati con successo!\n");
+  printf("Tutti i thread sono stati terminati con successo!\n");
 
   return 0;
 }
