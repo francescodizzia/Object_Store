@@ -13,8 +13,9 @@ dir :
 dserver: server
 	valgrind $(VALGRIND_FLAGS) ./server
 
-dclient: client
-	valgrind $(VALGRIND_FLAGS) ./client
+test: server client
+	./test_base.sh
+	./testsum.sh
 
 server: $(SERVER_COMPILE) libplug.a
 	$(CC) $(CFLAGS)  $(SERVER_COMPILE) -o $@ -lplug -lpthread
