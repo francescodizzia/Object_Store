@@ -54,7 +54,7 @@ void sendKO(int connfd, char* currentUser, char* operation, char* message){
 
 //Procedura che si occupa della disconnessione dell'utente
 void leave(int connfd, char* currentUser){
-  //Vado a rimuovere l'utente dalla tabella hash, in questo modo do la possibilita'
+  //Vado a rimuovere l'utente dalla tabella hash, in questo modo do la possibilità
   //all'utente di riconnettersi (se lo desidera) in un secondo momento
   removeHashTable(&HT,currentUser);
   memset(currentUser, '\0', USER_MAX_LENGTH);
@@ -78,30 +78,35 @@ void register_(int connfd, char* currentUser, char* name){
   if(currentUser[0] == '\0'){
     strcpy(currentUser,name);
     insertHashTable(&HT,currentUser);
+    printf("YES\n");
+  }
+  //L'utente sta tentando di registrarsi di nuovo, ma non ha ancora effettuato la disconnessione
+  //dell'utente precedente
+  else{
+    printf("NO\n");
+    sendKO(connfd, name, "REGISTER","User trying to register again, but he's already connected (need to disconnect first)");
+    return;
   }
 
-/////////////////////////////////////////////////////////////////TODO ELSE///////////////////////////////////////////
+  //Ottengo il path relativo all'utente
+  char* user_path = getUserPath(name);
 
+  //Provo a creare la direcytory
+  int result = mkdir(user_path,  0755);
+  free(user_path);
 
-    //Ottengo il path relativo all'utente
-    char* user_path = getUserPath(name);
-
-    //Provo a creare la direcytory
-    int result = mkdir(user_path,  0755);
-    free(user_path);
-
-    //Se ho avuto successo nella creazione, mando OK
-    if(result == 0)
+  //Se ho avuto successo nella creazione, mando OK
+  if(result == 0)
+    sendOK(connfd, currentUser, "REGISTER");
+  else{
+    //Se fallisco nella creazione, ma è perché la directory esiste già, va tutto bene
+    //(l'utente si era già registrato in precedenza)
+    if(errno == EEXIST)
       sendOK(connfd, currentUser, "REGISTER");
-    else{
-      //Se fallisco nella creazione, ma è perché la directory esiste già, va tutto bene
-      //(l'utente si era già registrato in precedenza)
-      if(errno == EEXIST)
-        sendOK(connfd, currentUser, "REGISTER");
-      //Se fallisco in ogni altro caso, vuol dire che ho avuto un problema e mando KO
-      else
-        sendKO(connfd, currentUser, "REGISTER", NULL);
-    }
+    //Se fallisco in ogni altro caso, vuol dire che ho avuto un problema e mando KO
+    else
+      sendKO(connfd, currentUser, "REGISTER", NULL);
+  }
 
 }
 

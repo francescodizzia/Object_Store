@@ -120,6 +120,17 @@ bool test3(char* user){
   return true;
 }
 
+bool test4(char* user){
+  bool connected, disconnected, reconnected, stored;
+  ASSERT_BOOL(connected, os_connect(user));
+  //ASSERT_BOOL(stored, os_store("one","abcdefghilmnopqrstuvz",21));
+  ASSERT_BOOL(connected, os_connect("user_somvpm"));
+  //ASSERT_BOOL(stored, os_store("two","abcdefghilmnopqrstuvz",21));*/
+  //ASSERT_BOOL(disconnected, os_disconnect());
+  //ASSERT_BOOL(disconnected, os_disconnect());
+
+  return true;
+}
 
 int main(int argc,char* argv[]){
 
@@ -140,6 +151,8 @@ int main(int argc,char* argv[]){
     result = test2(user);
   else if(test_code == 3)
     result = test3(user);
+  else if(test_code == 4)
+    result = test4(user);
 
   if(result)
     printf("[OK] Test %d passato con successo! [utente: %s]\n", test_code, user);

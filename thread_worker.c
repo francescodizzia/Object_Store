@@ -66,11 +66,6 @@ void *thread_worker(void *arg) {
   pthread_mutex_lock(&client_mtx);
     n_clients--;
 
-  /*  if(currentUser[0] != '\0'){
-      removeHashTable(&HT, currentUser);
-      memset(currentUser, '\0', USER_MAX_LENGTH);
-    }*/
-
     //Se quest'ultimo utente che ho 'rimosso' era l'ultimo, posso svegliare
     //il server, che era in attesa fino a questo momento
     if(n_clients <= 0)

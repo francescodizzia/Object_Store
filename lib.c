@@ -134,6 +134,12 @@ void *getDataResponseMsg(){
 
 
 int os_connect(char *name) {
+  if(fd != -1){
+    memset(last_error_msg, '\0', 256);
+    strcpy(last_error_msg, "KO [Client already connected, need to disconnect first]");
+    return false;
+  }
+
   struct sockaddr_un serv_addr;
   int c;
   fd = socket(AF_UNIX, SOCK_STREAM, 0);
