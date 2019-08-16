@@ -30,6 +30,9 @@ int fd = -1;
 char last_error_msg[256];
 
 //Funzione che, dato un intero, restituisce il numero di cifre
+//(Si è preferito creare una funzione ad-hoc anziché fare una cosa del
+//tipo 'convertire l'intero in stringa e fare una strlen' per ragioni di
+//performance e leggibilità)
 size_t getNumberOfDigits(size_t k){
   int len;
 	if(k == 0)return 1;

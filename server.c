@@ -46,9 +46,9 @@ size_t folders = -1;
 
 int setStats(const char* filename, const struct stat* stats, int type){
 
-  if(type == FTW_F) // E' un file
+  if(type == FTW_F) // È un file
     objects++;
-  else if(type == FTW_D) //E' una directory
+  else if(type == FTW_D) //È una directory
     folders++;
 
   total_size += stats->st_size;

@@ -40,12 +40,12 @@ void *thread_worker(void *arg) {
   //Loop del thread: ogni volta che mi arriva una richiesta vado ad effettuare il parsing
   //di tale richiesta ed eseguo le corrispettive operazioni
   while(running){
+    //Leggo l'header
     u = read(connfd, header, MAX_HEADER_SIZE);
-    /*
-    Nel caso in cui ci sia un errore nella lettura dell'header o un fallimento nella
-    comunicazione via socket (magari il client relativo al thread si è disconnesso)
-    esco dal loop
-    */
+
+    //Nel caso in cui ci sia un errore nella lettura dell'header o un fallimento nella
+    //comunicazione via socket (magari il client relativo al thread si è disconnesso)
+    //esco dal loop
     if(u <= 0)break;
 
     //Effettuo il parsing e l'eventuale esecuzione dell'operazione richiesta
@@ -54,7 +54,7 @@ void *thread_worker(void *arg) {
     memset(header, '\0', MAX_HEADER_SIZE);
   }
 
-  //Vado a rimuovere l'utente dalla tabella hash, in questo modo do la possibilita'
+  //Vado a rimuovere l'utente dalla tabella hash, in questo modo do la possibilità
   //all'utente di riconnettersi (se lo desidera) in un secondo momento
   if(currentUser[0] != '\0'){
     removeHashTable(&HT, currentUser);
@@ -66,7 +66,7 @@ void *thread_worker(void *arg) {
   pthread_mutex_lock(&client_mtx);
     n_clients--;
 
-    //Se quest'ultimo utente che ho 'rimosso' era l'ultimo, posso svegliare
+    //Se quest'ultimo utente che ho rimosso era l'ultimo, posso svegliare
     //il server, che era in attesa fino a questo momento
     if(n_clients <= 0)
       pthread_cond_signal(&empty);

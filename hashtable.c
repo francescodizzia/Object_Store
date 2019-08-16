@@ -19,6 +19,7 @@
 #include <hashtable.h>
 #include <lib.h>
 
+//Inserisce la stringa 'name' nella lista con testa 'head'
 void insertLinkedList(linkedlist* *head, char* name){
   linkedlist *new = calloc(1, sizeof(linkedlist));
   new->name = strdup(name);
@@ -27,6 +28,7 @@ void insertLinkedList(linkedlist* *head, char* name){
   *head = new;
 }
 
+//Stampa la lista (utile per il debug)
 void printLinkedList(linkedlist *head){
   if(head == NULL){
     printf("NULL\n");
@@ -36,6 +38,8 @@ void printLinkedList(linkedlist *head){
   printLinkedList(head->next);
 }
 
+//Verifica se l'elemento è presente nella lista o meno
+//restituendo rispettivamente TRUE o FALSE
 bool isInLinkedList(linkedlist *head, char* target){
   if(head == NULL)return false;
 
@@ -45,6 +49,7 @@ bool isInLinkedList(linkedlist *head, char* target){
   return isInLinkedList(head->next,target);
 }
 
+//Rimuove l'elemento dalla lista
 void removeLinkedList(linkedlist* *head, char* target){
   if(*head == NULL)return;
 
@@ -77,7 +82,7 @@ void removeLinkedList(linkedlist* *head, char* target){
 
 }
 
-
+//Esegue la free su tutti gli elementi della lista
 void freeLinkedList(linkedlist* *head){
   linkedlist *curr = *head, *tmp;
 
@@ -92,65 +97,59 @@ void freeLinkedList(linkedlist* *head){
   head = NULL;
 }
 
-
+//Funzione Hash 'djb2', di Dan Bernstein (http://www.cse.yorku.ca/~oz/hash.html)
 unsigned long hash(char *str){
     unsigned long hash = 5381;
     int c = *str++;
 
     while(c){
-      hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+      hash = ((hash << 5) + hash) + c;
       c = *str++;
     }
 
     return hash;
 }
 
+//Crea e alloca l'hash table
 hashtable createHashTable(size_t N){
   hashtable T;
-  //T.ht = calloc(size,sizeof(linkedlist*));
   T.field = calloc(N,sizeof(cell));
   T.size = N;
   return T;
 }
 
+//Inserisce l'elemento nella tabella hash
 void insertHashTable(hashtable *T, char* elem){
   unsigned long h = hash(elem) % T->size;
   pthread_mutex_lock(&(T->field[h].mtx));
-  //DEBUG_PRINT("Insert: Entering mutex %lu\n",h);
-
   insertLinkedList(&(T->field[h].list), elem);
-//  printf("[+]added %s\n",elem);
-
-//  DEBUG_PRINT("Insert: Exiting mutex %lu\n",h);
   pthread_mutex_unlock(&(T->field[h].mtx));
 
 }
 
+//Stampa tutta la tabella hash (utile per il debug)
 void printHashTable(hashtable T){
   for(int i = 0; i < T.size; i++){
-    //DEBUG_PRINT("DEBUG_PRINT: Entering mutex %d\n",i);
     pthread_mutex_lock(&(T.field[i].mtx));
-    printf("Cella [%d]: ",i);
-    printLinkedList(T.field[i].list);
-
+      printf("Cella [%d]: ",i);
+      printLinkedList(T.field[i].list);
     pthread_mutex_unlock(&(T.field[i].mtx));
-  //  DEBUG_PRINT("DEBUG_PRINT: Exiting mutex %d\n",i);
   }
 }
 
+//Verifica se un elemento è presente o meno nella tabella
 bool isInHashTable(hashtable T, char* name){
   if(name == NULL)return false;
   unsigned long h = hash(name) % T.size;
 
-  //DEBUG_PRINT("IsIn: Entering mutex %lu\n",h);
   pthread_mutex_lock(&(T.field[h].mtx));
   bool result = isInLinkedList(T.field[h].list,name);
   pthread_mutex_unlock(&(T.field[h].mtx));
-  //DEBUG_PRINT("IsIn: Exiting mutex %lu\n",h);
-
   return result;
 }
 
+
+//Rimuove l'elemento dalla tabella hash
 void removeHashTable(hashtable *T, char* target){
   if(target == NULL)return;
   unsigned long h = hash(target) % T->size;
@@ -161,16 +160,13 @@ void removeHashTable(hashtable *T, char* target){
 
 }
 
+//Esegue la free di tutti gli elementi della hash table
 void freeHashTable(hashtable *T){
   for(int i = 0; i < (T->size); i++){
-  //  DEBUG_PRINT("Delete: Entering mutex %d\n",i);
     pthread_mutex_lock(&(T->field[i].mtx));
-    freeLinkedList(&(T->field[i].list));
-    //free(T.field[i]);
+      freeLinkedList(&(T->field[i].list));
     pthread_mutex_unlock(&(T->field[i].mtx));
-  //  DEBUG_PRINT("Delete: Exiting mutex %d\n",i);
   }
 
   free(T->field);
-//  free(T);
 }
