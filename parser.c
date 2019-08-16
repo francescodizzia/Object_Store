@@ -72,21 +72,9 @@ void register_(int connfd, char* currentUser, char* name){
     return;
   }
 
-
-  //Se l'utente non è stato ancora registrato, posso allora procedere con
-  //la registrazione (e conseguente inserimento nella tabella)
-  if(currentUser[0] == '\0'){
-    strcpy(currentUser,name);
-    insertHashTable(&HT,currentUser);
-    printf("YES\n");
-  }
-  //L'utente sta tentando di registrarsi di nuovo, ma non ha ancora effettuato la disconnessione
-  //dell'utente precedente
-  else{
-    printf("NO\n");
-    sendKO(connfd, name, "REGISTER","User trying to register again, but he's already connected (need to disconnect first)");
-    return;
-  }
+  //Setto l'utente corrente e lo inserisco nella tabella hash
+  strcpy(currentUser,name);
+  insertHashTable(&HT,currentUser);
 
   //Ottengo il path relativo all'utente
   char* user_path = getUserPath(name);
@@ -110,6 +98,7 @@ void register_(int connfd, char* currentUser, char* name){
 
 }
 
+//Procedura relativa alla store di un oggetto
 void store(int connfd, char* currentUser ,char* name, long int len, char* newline){
   void *data = calloc(len,1);
   int b = MAX_HEADER_SIZE-10-strlen(name)-getNumberOfDigits(len);
@@ -170,24 +159,27 @@ void retrieve(int connfd, char* currentUser, char* name){
     free(tmp);
     free(block);
     fclose(f);
- 	  }
-    else
-      sendKO(connfd, currentUser, "RETRIEVE", "Can't retrieve the object");
+ 	 }
+   else
+    sendKO(connfd, currentUser, "RETRIEVE", "Can't retrieve the object");
 
   free(user_path);
   free(file_path);
 
 }
 
-
+//Procedura relativa alla eliminazione di un determinato oggetto
 void delete(int connfd, char* currentUser, char* obj_name){
+  //Ottengo il path relativo all'oggetto
   char* user_path = getUserPath(currentUser);
   char* file_path = calloc(strlen(user_path)+strlen(obj_name)+1 ,sizeof(char));
   strcat(file_path,user_path);
   strcat(file_path,obj_name);
 
+  //Tento la rimozione
   bool success = (remove(file_path) == 0);
 
+  //Se ho avuto successo mando OK, altrimenti KO
   if(success) sendOK(connfd, currentUser, "DELETE");
   else sendKO(connfd, currentUser, "DELETE", NULL);
 
