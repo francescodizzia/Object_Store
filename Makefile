@@ -17,13 +17,13 @@ test: server client
 	./test_base.sh
 	./testsum.sh
 
-server: $(SERVER_COMPILE) libplug.a
-	$(CC) $(CFLAGS)  $(SERVER_COMPILE) -o $@ -lplug -lpthread
+server: $(SERVER_COMPILE) libobjstore.a
+	$(CC) $(CFLAGS)  $(SERVER_COMPILE) -o $@ -lobjstore -lpthread
 
-client: client.c libplug.a
-	$(CC) $(CFLAGS) $< -o $@ -lplug -lpthread
+client: client.c libobjstore.a
+	$(CC) $(CFLAGS) $< -o $@ -lobjstore -lpthread
 
-libplug.a: lib.o
+libobjstore.a: lib.o
 	ar rvs $@ $<
 
 %.o: %.c %.h
@@ -33,4 +33,4 @@ clean:
 	$(RM) ./*.o ./*.out ./server ./client ./$(SOCKNAME) ./testout.log ./*.a
 	$(RM) -r ./data/* ./data
 	clear
-.PHONY: rclient rserver clean dclient dserver all
+.PHONY: clean dclient dserver all

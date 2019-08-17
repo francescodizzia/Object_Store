@@ -299,31 +299,6 @@ bool str_equals(char* a, char* b){
  return (strcmp(a,b) == 0);
 }
 
-/*
-bool sendFile(char* src, char* dest){
-  FILE *f = fopen(src, "rb");
-  bool result = false;
-
-  if(f){
-   int d = fileno(f);
-
-   if(d == -1)return false;
-
-   struct stat finfo;
-   fstat(d, &finfo);
-
-   size_t size = finfo.st_size;
-   char *buffer = calloc(size, sizeof(char));
-   if(!buffer)return false;
-   fread(buffer, size, 1, f);
-   result = os_store(dest,buffer, size);
-   free(buffer);
-   fclose(f);
- 	}
-
-	return result;
-}
-*/
 
 //Funzione readn, vista a lezione
 int readn(long fd, void *buf, size_t size) {

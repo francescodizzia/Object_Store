@@ -14,9 +14,8 @@
 #include <stdbool.h>
 
 
-#define ASSERT_BOOL(x,c){\
-  x = c;\
-  if(!x){\
+#define ASSERT_BOOL(c){\
+  if(!c){\
     return false;\
   }\
 }
@@ -38,10 +37,9 @@ bool test1(char* user){
   memset(obj_name,'\0',128);
 
   int size = 0;
-  bool connected,stored,disconnected;
   char* test;
 
-  ASSERT_BOOL(connected, os_connect(user));
+  ASSERT_BOOL(os_connect(user));
 
   for(int i = 0; i < 20; i++){
     size = 100 + ((i*17)*(i*17));
@@ -51,20 +49,19 @@ bool test1(char* user){
     sprintf(obj_name,"object_%d",i+1);
 
     test = makeTestArray(size);
-    ASSERT_BOOL(stored, os_store(obj_name, test, size));
+    ASSERT_BOOL(os_store(obj_name, test, size));
     free(test);
   }
 
-  ASSERT_BOOL(disconnected, os_disconnect());
+  ASSERT_BOOL(os_disconnect());
 
 
   return true;
 }
 
 bool test2(char* user){
-  bool connected,disconnected;
 
-  ASSERT_BOOL(connected, os_connect(user));
+  ASSERT_BOOL(os_connect(user));
 
   void *retrieved_obj = NULL;
   char obj_name[128];
@@ -96,7 +93,7 @@ bool test2(char* user){
     free(test);
   }
 
-  ASSERT_BOOL(disconnected, os_disconnect());
+  ASSERT_BOOL(os_disconnect());
 
   return true;
 }
@@ -104,37 +101,52 @@ bool test2(char* user){
 bool test3(char* user){
   char obj_name[128];
   memset(obj_name, '\0', 128);
-  bool connected,deleted,disconnected;
 
-
-  ASSERT_BOOL(connected, os_connect(user));
+  ASSERT_BOOL(os_connect(user));
 
   for(int i = 0; i < 20; i++){
     sprintf(obj_name,"object_%d",i+1);
-    ASSERT_BOOL(deleted, os_delete(obj_name));
+    ASSERT_BOOL(os_delete(obj_name));
     memset(obj_name, '\0', 128);
   }
 
-  ASSERT_BOOL(disconnected, os_disconnect());
+  ASSERT_BOOL(os_disconnect());
 
   return true;
 }
 
-bool test4(char* user){
-  bool connected, disconnected, reconnected, stored;
-  ASSERT_BOOL(connected, os_connect(user));
-  //ASSERT_BOOL(stored, os_store("one","abcdefghilmnopqrstuvz",21));
-  ASSERT_BOOL(connected, os_connect("user_somvpm"));
-  //ASSERT_BOOL(stored, os_store("two","abcdefghilmnopqrstuvz",21));*/
-  //ASSERT_BOOL(disconnected, os_disconnect());
-  //ASSERT_BOOL(disconnected, os_disconnect());
+bool test4(char* user, char* src, char* dest){
+  bool result = false;
 
-  return true;
+  ASSERT_BOOL(os_connect(user));
+
+  FILE *f = fopen(src, "rb");
+  if(f){
+   int d = fileno(f);
+
+   if(d == -1)return false;
+
+   struct stat finfo;
+   if(fstat(d, &finfo) == -1)return false;
+
+   size_t size = finfo.st_size;
+   char *buffer = calloc(size, sizeof(char));
+   if(!buffer) return false;
+   fread(buffer, size, 1, f);
+   result = os_store(dest, buffer, size);
+   free(buffer);
+   fclose(f);
+  }
+  else return false;
+
+  ASSERT_BOOL(os_disconnect());
+
+  return result;
 }
 
 int main(int argc,char* argv[]){
 
-  signal(SIGPIPE, SIG_IGN);
+//  signal(SIGPIPE, SIG_IGN);
 
   if(argc < 3){
     printf("Argomenti mancanti\n");
@@ -143,6 +155,8 @@ int main(int argc,char* argv[]){
 
   char* user = strdup(argv[1]);
   int test_code = atol(argv[2]);
+  char* data_src = strdup(argv[3]);
+  char* dest = strdup(argv[4]);
   bool result = false;
 
   if(test_code == 1)
@@ -151,8 +165,8 @@ int main(int argc,char* argv[]){
     result = test2(user);
   else if(test_code == 3)
     result = test3(user);
-  else if(test_code == 4)
-    result = test4(user);
+  else if(test_code == 4 && data_src && dest)
+    result = test4(user, data_src, dest);
 
   if(result)
     printf("[OK] Test %d passato con successo! [utente: %s]\n", test_code, user);
@@ -162,5 +176,7 @@ int main(int argc,char* argv[]){
   }
 
   free(user);
+  if(data_src) free(data_src);
+  if(dest) free(dest);
   return 0;
 }
