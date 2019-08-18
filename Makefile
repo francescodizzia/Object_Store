@@ -10,12 +10,15 @@ all: clean dir server client
 dir :
 	mkdir data
 
-dserver: server
-	valgrind $(VALGRIND_FLAGS) ./server
-
 test: server client
 	./test_base.sh
 	./testsum.sh
+
+test2:
+	./test_files.sh
+
+dserver: server
+	valgrind $(VALGRIND_FLAGS) ./server
 
 server: $(SERVER_COMPILE) libobjstore.a
 	$(CC) $(CFLAGS)  $(SERVER_COMPILE) -o $@ -lobjstore -lpthread

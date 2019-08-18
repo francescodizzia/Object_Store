@@ -25,7 +25,7 @@
 //Procedura che invia come risposta 'OK' al client e stampa alcune informazioni utili a schermo
 void sendOK(int connfd, char* currentUser, char* operation){
   writen(connfd,"OK \n",4);
-  fprintf(target_output,"user %-15s fd: %-10dop: %-10s\tOK \n",  currentUser, connfd, operation);
+  fprintf(target_output,"user: %-15s fd: %-10dop: %-10s\tOK \n",  currentUser, connfd, operation);
 }
 
 //Stessa cosa con 'KO', qui però devo devo formattare diversamente la risposta
@@ -49,7 +49,7 @@ void sendKO(int connfd, char* currentUser, char* operation, char* message){
   writen(connfd,fail_buf,strlen(fail_buf));
 
   //Stampo alcune informazioni utili a schermo
-  fprintf(target_output,"user %-15s fd: %-10dop: %-10s\t%s",currentUser, connfd,operation,fail_buf);
+  fprintf(target_output,"user: %-15s fd: %-10dop: %-10s\t%s",currentUser, connfd,operation,fail_buf);
 }
 
 //Procedura che si occupa della disconnessione dell'utente
@@ -57,9 +57,12 @@ void leave(int connfd, char* currentUser){
   //Vado a rimuovere l'utente dalla tabella hash, in questo modo do la possibilità
   //all'utente di riconnettersi (se lo desidera) in un secondo momento
   removeHashTable(&HT,currentUser);
+  char* exUser = strdup(currentUser);
   memset(currentUser, '\0', USER_MAX_LENGTH);
+
   //Mando la risposta (positiva) al client
-  sendOK(connfd, currentUser, "LEAVE");
+  sendOK(connfd, exUser, "LEAVE");
+  free(exUser);
 }
 
 
@@ -153,7 +156,7 @@ void retrieve(int connfd, char* currentUser, char* name){
     memcpy(tmp+N,block,size);
 
     writen(connfd,tmp,N+size);
-    fprintf(target_output,"user %-15s fd: %-10dop: %-10s\tOK \n",  currentUser, connfd, "RETRIEVE");
+    fprintf(target_output,"user: %-15s fd: %-10dop: %-10s\tOK \n",  currentUser, connfd, "RETRIEVE");
 
     free(buff);
     free(tmp);
