@@ -22,7 +22,7 @@
 #define target_output stdout
 
 void setBlockingFD(int connfd, int blocking){
-/*  int flags;
+  int flags;
 
   if(blocking){
     flags = fcntl(connfd, F_GETFL, 0);
@@ -32,8 +32,8 @@ void setBlockingFD(int connfd, int blocking){
   else{
     flags = fcntl(connfd, F_GETFL, 0);
     fcntl(connfd, F_SETFL, flags | O_NONBLOCK);
-  }*/
-  ;
+  }
+
 }
 
 //Procedura che invia come risposta 'OK' al client e stampa alcune informazioni utili a schermo
@@ -126,11 +126,12 @@ void store(int connfd, char* currentUser ,char* name, long int len, char* newlin
   int n=-1;
   if(len-b > 0){
 
+    memcpy(data,(newline+2),b);
 
     setBlockingFD(connfd, true);
-
-    memcpy(data,(newline+2),b);
     n = readn(connfd, ((char*) data)+b,len-b);
+
+    setBlockingFD(connfd, false);
     if(n < 0)printf("errno: %s\n",strerror(errno));
   //  if(n < 0){sendKO(connfd, currentUser, "STORE", NULL); return;}
 
@@ -159,7 +160,9 @@ void retrieve(int connfd, char* currentUser, char* name){
   strcat(file_path,user_path);
   strcat(file_path,name);
 
+
   int new_fd = open(file_path, O_RDONLY, S_IRUSR | S_IWUSR);
+
 
   if(new_fd != -1){
     struct stat finfo;
@@ -167,31 +170,27 @@ void retrieve(int connfd, char* currentUser, char* name){
 
     size_t size = finfo.st_size;
     void *block = calloc(size, 1);
-    setBlockingFD(connfd, true);
-    readn(new_fd, block, size);
+
+    readn(new_fd, block ,size);
+
     int N = 8 + getNumberOfDigits(size);
     char* buff = calloc(N + 1, sizeof(char));
 
     sprintf(buff,"DATA %lu \n ", size);
 
-
     char* tmp = calloc(N+1+size,sizeof(char));
     memcpy(tmp,buff,N);
     memcpy(tmp+N,block,size);
-    //printf("%s\n", tmp);
-    int w = writen(connfd,tmp,N+size);
-    if(w == -1){sendKO(connfd, currentUser, "RETRIEVE", name, NULL);return;}
-    //fprintf(target_output,"user: %-15s %-10s\tfd: %-10dop: %-10s\tOK \n",  currentUser, name, connfd, "RETRIEVE");
-    //fprintf(target_output,"%-15s %-10s\tfd: %-10dop: %-10s\t%s",  currentUser, obj_name, connfd, operation, fail_buf);
-    setBlockingFD(connfd, false);
 
-    sendOK(connfd, currentUser, "RETRIEVE", name);
+    int w = writen(connfd,tmp,N+size);
+    if(w == -1)printf("FAIL\n");
+    fprintf(target_output,"%-15s %-10s\tfd: %-10dop: %-10s\tOK \n",  currentUser, name, connfd, "RETRIEVE");
+
     free(buff);
     free(tmp);
     free(block);
     close(new_fd);
-
-
+    //fclose(f);
  	 }
    else
     sendKO(connfd, currentUser, "RETRIEVE", name, "Can't retrieve the object");
@@ -200,6 +199,7 @@ void retrieve(int connfd, char* currentUser, char* name){
   free(file_path);
 
 }
+
 
 //Procedura relativa alla eliminazione di un determinato oggetto
 void delete(int connfd, char* currentUser, char* obj_name){

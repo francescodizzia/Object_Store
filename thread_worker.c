@@ -25,10 +25,10 @@ bool must_leave = false;
 
 void *thread_worker(void *arg) {
   long connfd = (long)arg;
-  /*
+
   int flags = fcntl(connfd, F_GETFL, 0);
   fcntl(connfd, F_SETFL, flags | O_NONBLOCK);
-  */
+  
   //Alloco header e la stringa che mi andra' a rappresentare l'utente attualmente connesso
   char *header = calloc(MAX_HEADER_SIZE, sizeof(char));
   char currentUser[USER_MAX_LENGTH];
