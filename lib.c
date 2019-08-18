@@ -20,7 +20,7 @@
 #include <hashtable.h>
 
 
-#define REGISTER_LENGTH 12 //include \0, gli altri no
+#define REGISTER_LENGTH 11 //!!!!!NONinclude \0, gli altri no
 #define STORE_LENGTH 10
 #define RETRIEVE_LENGTH 11
 #define DELETE_LENGTH 9
@@ -172,14 +172,14 @@ int os_connect(char *name) {
 
   //Calcolo la dimensione necessaria per il buffer
   int len = strlen(name);
-  int N = len + REGISTER_LENGTH;
+  int N = len + REGISTER_LENGTH + 1;
 
   //Creo il buffer, lo imposto secondo le regole dettate dal protocollo
   char* buff = calloc(N, sizeof(char));
   sprintf(buff,"REGISTER %s \n",name);
 
   //Provo a inviare il messaggio
-	int n = write(fd, buff, N);
+	int n = write(fd, buff, N-1);
 
   //Errore nella write: fallimento
   if(n < 0)return false;
@@ -205,7 +205,7 @@ int os_store(char *name, void *block, size_t len) {
   sprintf(buff,"STORE %s %lu \n ",name, len);
 
   //Creo il buffer 'definitivo' che andrà inviato realmente
-  char* final = calloc(store_size+1+len,sizeof(char));
+  char* final = calloc(store_size+1+len, sizeof(char));
   //Copio il contenuto parziale dal vecchio buffer nel nuovo
   memcpy(final,buff,store_size);
   //Attraverso l'aritmetica dei puntatori riesco a copiare nel punto esatto il 'block'
@@ -270,7 +270,7 @@ int os_delete(char* name){
 //Esegue la disconnessione dell'utente corrente
 int os_disconnect(){
  //In questo caso non ho bisogno di calcolare dimensioni o allocare buffer,
- //perché il messaggio è fisso
+ //perché il messaggio è costante, con una dimensione fissa
  int w = writen(fd, "LEAVE \n", 7);
  //Fallimento nella write
  if(w == -1)return false;

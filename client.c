@@ -189,7 +189,7 @@ bool test4(char* user, char* src, char* dest){
   int new_fd = open(src, O_RDONLY, S_IRUSR | S_IWUSR);
 
   //In caso di errore termino ritornando FALSE
-  if(new_fd != -1) return false;
+  if(new_fd == -1) return false;
 
   //Uso la funzione stat per ottenere la grandezza in byte del file
   struct stat finfo;
