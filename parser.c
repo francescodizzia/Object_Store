@@ -133,19 +133,17 @@ void retrieve(int connfd, char* currentUser, char* name){
   strcat(file_path,user_path);
   strcat(file_path,name);
 
-  FILE *f = fopen(file_path, "rb");
+  int new_fd = open(file_path, O_RDONLY, S_IRUSR | S_IWUSR);
 
-  if(f){
-    int d = fileno(f);
+  if(new_fd != -1){
 
     struct stat finfo;
-    fstat(d, &finfo);
+    stat(file_path, &finfo);
 
     size_t size = finfo.st_size;
     void *block = calloc(size, 1);
 
-    fread(block, size, 1, f);
-
+    readn(new_fd, block, size);
     int N = 8 + getNumberOfDigits(size);
     char* buff = calloc(N + 1, sizeof(char));
 
@@ -161,7 +159,7 @@ void retrieve(int connfd, char* currentUser, char* name){
     free(buff);
     free(tmp);
     free(block);
-    fclose(f);
+    close(new_fd);
  	 }
    else
     sendKO(connfd, currentUser, "RETRIEVE", "Can't retrieve the object");

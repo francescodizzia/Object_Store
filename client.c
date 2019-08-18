@@ -175,32 +175,49 @@ bool test3(char* user){
   return true;
 }
 
+
+//Test di tipo 4: un piccolo test extra per dimostrare che l'ObjectStore
+//è in grado di agire anche su file di tipo binario, e non solo con stringhe
+//(come fatto vedere con i test 1 e 2)
 bool test4(char* user, char* src, char* dest){
   bool result = false;
 
+  //Tento la connessione
   ASSERT_BOOL(os_connect(user));
 
-  FILE *f = fopen(src, "rb");
-  if(f){
-   int d = fileno(f);
+  //Apro il file con il path sorgente (src) in modalità lettura
+  int new_fd = open(src, O_RDONLY, S_IRUSR | S_IWUSR);
 
-   if(d == -1)return false;
+  //In caso di errore termino ritornando FALSE
+  if(new_fd != -1) return false;
 
-   struct stat finfo;
-   if(fstat(d, &finfo) == -1)return false;
+  //Uso la funzione stat per ottenere la grandezza in byte del file
+  struct stat finfo;
+  if(stat(src, &finfo) == -1)return false;
 
-   size_t size = finfo.st_size;
-   char *buffer = calloc(size, sizeof(char));
-   if(!buffer) return false;
-   fread(buffer, size, 1, f);
-   result = os_store(dest, buffer, size);
-   free(buffer);
-   fclose(f);
-  }
-  else return false;
+  size_t size = finfo.st_size;
 
+  //Creo un buffer della stessa grandezza che userò per immagazzinare
+  //il contenuto del file
+  char *buffer = calloc(size, sizeof(char));
+  if(!buffer) return false;
+
+  //Leggo il contenuto del file e lo metto nel buffer
+  readn(new_fd, buffer, size);
+
+  //Effettuo la store, inviando come dati il buffer manipolato poco prima
+  result = os_store(dest, buffer, size);
+
+  //Libero la memoria e chiudo il fd
+  free(buffer);
+  close(new_fd);
+
+  //Provo a disconnettermi
   ASSERT_BOOL(os_disconnect());
 
+
+  //A questo punto l'esito dipende dell'operazione dipende dalla store,
+  //ritorno quindi l'esito della store
   return result;
 }
 
