@@ -21,15 +21,29 @@
 
 #define target_output stdout
 
+void setBlockingFD(int connfd, int blocking){
+/*  int flags;
+
+  if(blocking){
+    flags = fcntl(connfd, F_GETFL, 0);
+    flags &= ~O_NONBLOCK;
+    fcntl(connfd, F_SETFL, flags);
+  }
+  else{
+    flags = fcntl(connfd, F_GETFL, 0);
+    fcntl(connfd, F_SETFL, flags | O_NONBLOCK);
+  }*/
+  ;
+}
 
 //Procedura che invia come risposta 'OK' al client e stampa alcune informazioni utili a schermo
-void sendOK(int connfd, char* currentUser, char* operation){
+void sendOK(int connfd, char* currentUser, char* operation, char* obj_name){
   writen(connfd,"OK \n",4);
-  fprintf(target_output,"user: %-15s fd: %-10dop: %-10s\tOK \n",  currentUser, connfd, operation);
+  fprintf(target_output,"%-15s %-10s\tfd: %-10dop: %-10s\tOK \n",  currentUser, obj_name, connfd, operation);
 }
 
 //Stessa cosa con 'KO', qui però devo devo formattare diversamente la risposta
-void sendKO(int connfd, char* currentUser, char* operation, char* message){
+void sendKO(int connfd, char* currentUser, char* operation, char* obj_name, char* message){
   char* toPrint = NULL;
 
   //Posso decidere se inviare insieme a 'KO' un messaggio personalizzato sul momento
@@ -49,7 +63,8 @@ void sendKO(int connfd, char* currentUser, char* operation, char* message){
   writen(connfd,fail_buf,strlen(fail_buf));
 
   //Stampo alcune informazioni utili a schermo
-  fprintf(target_output,"user: %-15s fd: %-10dop: %-10s\t%s",currentUser, connfd,operation,fail_buf);
+//  fprintf(target_output,"user: %-15s fd: %-10dop: %-10s\t%s",currentUser, connfd,operation,fail_buf);
+  fprintf(target_output,"%-15s %-10s\tfd: %-10dop: %-10s\t%s",  currentUser, obj_name, connfd, operation, fail_buf);
 }
 
 //Procedura che si occupa della disconnessione dell'utente
@@ -61,8 +76,9 @@ void leave(int connfd, char* currentUser){
   memset(currentUser, '\0', USER_MAX_LENGTH);
 
   //Mando la risposta (positiva) al client
-  sendOK(connfd, exUser, "LEAVE");
+  sendOK(connfd, exUser, "LEAVE", NULL);
   free(exUser);
+  //must_leave = true;
 }
 
 
@@ -71,7 +87,7 @@ void register_(int connfd, char* currentUser, char* name){
   //Se è già presente nella tabella hash, vuol dire che c'è un altro client
   //attualmente connesso con lo stesso username: la procedura fallisce mandando KO
   if(isInHashTable(HT,name)){
-    sendKO(connfd,name,"REGISTER","Multiple clients with the same username");
+    sendKO(connfd,name,"REGISTER","Multiple clients with the same username", NULL);
     return;
   }
 
@@ -88,15 +104,15 @@ void register_(int connfd, char* currentUser, char* name){
 
   //Se ho avuto successo nella creazione, mando OK
   if(result == 0)
-    sendOK(connfd, currentUser, "REGISTER");
+    sendOK(connfd, currentUser, "REGISTER", NULL);
   else{
     //Se fallisco nella creazione, ma è perché la directory esiste già, va tutto bene
     //(l'utente si era già registrato in precedenza)
     if(errno == EEXIST)
-      sendOK(connfd, currentUser, "REGISTER");
+      sendOK(connfd, currentUser, "REGISTER", NULL);
     //Se fallisco in ogni altro caso, vuol dire che ho avuto un problema e mando KO
     else
-      sendKO(connfd, currentUser, "REGISTER", NULL);
+      sendKO(connfd, currentUser, "REGISTER", NULL, NULL);
   }
 
 }
@@ -106,22 +122,32 @@ void store(int connfd, char* currentUser ,char* name, long int len, char* newlin
   void *data = calloc(len,1);
   int b = MAX_HEADER_SIZE-10-strlen(name)-getNumberOfDigits(len);
 
-  int n;
+
+  int n=-1;
   if(len-b > 0){
+
+
+    setBlockingFD(connfd, true);
+
     memcpy(data,(newline+2),b);
     n = readn(connfd, ((char*) data)+b,len-b);
-    if(n <= 0) return;
+    if(n < 0)printf("errno: %s\n",strerror(errno));
+  //  if(n < 0){sendKO(connfd, currentUser, "STORE", NULL); return;}
+
+
+    setBlockingFD(connfd, false);
   }
   else memcpy(data,(void*)(newline+2),len);
 
   if(currentUser[0] == '\0')
-    sendKO(connfd, currentUser, "STORE", "User not registered");
+    sendKO(connfd, currentUser, "STORE", name, "User not registered");
   else{
       if(createFile(name,data,currentUser,len))
-        sendOK(connfd, currentUser, "STORE");
+        sendOK(connfd, currentUser, "STORE", name);
       else
-        sendKO(connfd, currentUser, "STORE", NULL);
+        sendKO(connfd, currentUser, "STORE", name, NULL);
   }
+
 
   free(data);
 }
@@ -136,33 +162,39 @@ void retrieve(int connfd, char* currentUser, char* name){
   int new_fd = open(file_path, O_RDONLY, S_IRUSR | S_IWUSR);
 
   if(new_fd != -1){
-
     struct stat finfo;
     stat(file_path, &finfo);
 
     size_t size = finfo.st_size;
     void *block = calloc(size, 1);
-
+    setBlockingFD(connfd, true);
     readn(new_fd, block, size);
     int N = 8 + getNumberOfDigits(size);
     char* buff = calloc(N + 1, sizeof(char));
 
     sprintf(buff,"DATA %lu \n ", size);
 
+
     char* tmp = calloc(N+1+size,sizeof(char));
     memcpy(tmp,buff,N);
     memcpy(tmp+N,block,size);
+    //printf("%s\n", tmp);
+    int w = writen(connfd,tmp,N+size);
+    if(w == -1){sendKO(connfd, currentUser, "RETRIEVE", name, NULL);return;}
+    //fprintf(target_output,"user: %-15s %-10s\tfd: %-10dop: %-10s\tOK \n",  currentUser, name, connfd, "RETRIEVE");
+    //fprintf(target_output,"%-15s %-10s\tfd: %-10dop: %-10s\t%s",  currentUser, obj_name, connfd, operation, fail_buf);
+    setBlockingFD(connfd, false);
 
-    writen(connfd,tmp,N+size);
-    fprintf(target_output,"user: %-15s fd: %-10dop: %-10s\tOK \n",  currentUser, connfd, "RETRIEVE");
-
+    sendOK(connfd, currentUser, "RETRIEVE", name);
     free(buff);
     free(tmp);
     free(block);
     close(new_fd);
+
+
  	 }
    else
-    sendKO(connfd, currentUser, "RETRIEVE", "Can't retrieve the object");
+    sendKO(connfd, currentUser, "RETRIEVE", name, "Can't retrieve the object");
 
   free(user_path);
   free(file_path);
@@ -181,8 +213,8 @@ void delete(int connfd, char* currentUser, char* obj_name){
   bool success = (remove(file_path) == 0);
 
   //Se ho avuto successo mando OK, altrimenti KO
-  if(success) sendOK(connfd, currentUser, "DELETE");
-  else sendKO(connfd, currentUser, "DELETE", NULL);
+  if(success) sendOK(connfd, currentUser, "DELETE", obj_name);
+  else sendKO(connfd, currentUser, "DELETE",obj_name , NULL);
 
   free(user_path);
   free(file_path);

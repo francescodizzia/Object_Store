@@ -215,7 +215,6 @@ bool test4(char* user, char* src, char* dest){
   //Provo a disconnettermi
   ASSERT_BOOL(os_disconnect());
 
-
   //A questo punto l'esito dipende dell'operazione dipende dalla store,
   //ritorno quindi l'esito della store
   return result;
@@ -248,6 +247,7 @@ int main(int argc,char* argv[]){
   data_src = strdup(argv[3]);
   dest = strdup(argv[4]);
   }
+
 
   //In base al numero specificato da shell, vado a effettuare il relativo test
   if(test_code == 1)

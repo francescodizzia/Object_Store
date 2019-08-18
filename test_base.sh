@@ -1,5 +1,5 @@
 #!/bin/bash
-exec > testout.log
+#exec > testout.log
 
 for i in {1..50}
 do

@@ -20,7 +20,7 @@
 #include <hashtable.h>
 
 
-#define REGISTER_LENGTH 11 //!!!!!NONinclude \0, gli altri no
+#define REGISTER_LENGTH 11
 #define STORE_LENGTH 10
 #define RETRIEVE_LENGTH 11
 #define DELETE_LENGTH 9
@@ -113,7 +113,7 @@ void *getDataResponseMsg(){
   read(fd,response_buf,MAX_RESPONSE_SIZE);
 
   char* ptr = NULL;
-  long int len = 0;
+  long int len = -1;
   char* first_str =  strtok_r(response_buf, " ", &ptr);
 
   if(first_str == NULL || str_equals(first_str,"KO")){
@@ -242,6 +242,7 @@ void *os_retrieve(char* name){
   //Fallimento nella write, ritorno NULL
   if(w == -1)return NULL;
 
+  printf("ciao %s\n",name);
   //Procedo col verificare, mediante una funzione ausiliaria, l'esito
   //dell'operazione ed eventualmente restituisco il blocco dati
   return getDataResponseMsg();

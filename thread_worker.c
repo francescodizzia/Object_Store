@@ -21,10 +21,14 @@
 #include <hashtable.h>
 #include <thread_worker.h>
 
+bool must_leave = false;
 
 void *thread_worker(void *arg) {
   long connfd = (long)arg;
-
+  /*
+  int flags = fcntl(connfd, F_GETFL, 0);
+  fcntl(connfd, F_SETFL, flags | O_NONBLOCK);
+  */
   //Alloco header e la stringa che mi andra' a rappresentare l'utente attualmente connesso
   char *header = calloc(MAX_HEADER_SIZE, sizeof(char));
   char currentUser[USER_MAX_LENGTH];
@@ -39,14 +43,25 @@ void *thread_worker(void *arg) {
 
   //Loop del thread: ogni volta che mi arriva una richiesta vado ad effettuare il parsing
   //di tale richiesta ed eseguo le corrispettive operazioni
-  while(running){
+  while(running || must_leave){
     //Leggo l'header
     u = read(connfd, header, MAX_HEADER_SIZE);
+
 
     //Nel caso in cui ci sia un errore nella lettura dell'header o un fallimento nella
     //comunicazione via socket (magari il client relativo al thread si è disconnesso)
     //esco dal loop
-    if(u <= 0)break;
+    if(u == -1){
+      if(errno == EAGAIN && running)
+        continue;
+      else{
+        //printf("currentUser: %s error: %s\n",currentUser,strerror(errno));
+        break;
+      }
+    }
+    if(u == 0)break;
+
+    //printf("ciao, sono %s\nmsg:%s\n",currentUser,header);
 
     //Effettuo il parsing e l'eventuale esecuzione dell'operazione richiesta
     parse_request(connfd,header,currentUser);
