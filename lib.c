@@ -26,7 +26,11 @@
 #define DELETE_LENGTH 9
 #define DATA_MSG_LENGTH 8
 
+//Valore di default del fd globale
 int fd = -1;
+
+//Stringa contenente l'ultimo errore riscontrato dopo un'operazione, viene
+//opportunamente settata nelle varie funzioni (os_register, os_store, etc...)
 char last_error_msg[256];
 
 //Funzione che, dato un intero, restituisce il numero di cifre
@@ -125,7 +129,7 @@ void *getDataResponseMsg(){
 
   if(len == 0){
     memset(last_error_msg, '\0', 256);
-    strcpy(last_error_msg, "Object length is equal to zero\n");
+    strcpy(last_error_msg, "KO [Object length is equal to zero]\n");
     return NULL;
   }
 
@@ -157,14 +161,13 @@ int os_connect(char *name) {
 
   //Inizializzo nel modo classico il fd e socket
   struct sockaddr_un serv_addr;
-  int c;
   fd = socket(AF_UNIX, SOCK_STREAM, 0);
   memset(&serv_addr, '0', sizeof(serv_addr));
   serv_addr.sun_family = AF_UNIX;
   strncpy(serv_addr.sun_path, SOCKNAME, strlen(SOCKNAME)+1);
 
   //Tento la connessione, in caso di fallimento ritorno FALSE
-  if( (c = connect(fd, (struct sockaddr*)&serv_addr, sizeof(serv_addr))) == -1)
+  if(connect(fd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) == -1)
     return false;
 
   //Calcolo la dimensione necessaria per il buffer
