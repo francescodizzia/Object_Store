@@ -242,7 +242,6 @@ void *os_retrieve(char* name){
   //Fallimento nella write, ritorno NULL
   if(w == -1)return NULL;
 
-  printf("ciao %s\n",name);
   //Procedo col verificare, mediante una funzione ausiliaria, l'esito
   //dell'operazione ed eventualmente restituisco il blocco dati
   return getDataResponseMsg();

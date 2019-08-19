@@ -28,7 +28,7 @@ void *thread_worker(void *arg) {
 
   int flags = fcntl(connfd, F_GETFL, 0);
   fcntl(connfd, F_SETFL, flags | O_NONBLOCK);
-  
+
   //Alloco header e la stringa che mi andra' a rappresentare l'utente attualmente connesso
   char *header = calloc(MAX_HEADER_SIZE, sizeof(char));
   char currentUser[USER_MAX_LENGTH];
@@ -43,10 +43,10 @@ void *thread_worker(void *arg) {
 
   //Loop del thread: ogni volta che mi arriva una richiesta vado ad effettuare il parsing
   //di tale richiesta ed eseguo le corrispettive operazioni
-  while(running || must_leave){
+  while(running){
     //Leggo l'header
     u = read(connfd, header, MAX_HEADER_SIZE);
-
+    //printf("header: %s\n",header);
 
     //Nel caso in cui ci sia un errore nella lettura dell'header o un fallimento nella
     //comunicazione via socket (magari il client relativo al thread si è disconnesso)

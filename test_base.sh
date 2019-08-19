@@ -7,7 +7,7 @@ do
 done
 wait
 
-
+: '
 for i in {1..50}
 do
   if [ "${i}" -le "30" ]
@@ -17,4 +17,6 @@ do
     ./client "user_${i}" 3 &
   fi
 done
+
 wait
+'
