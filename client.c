@@ -13,6 +13,8 @@
 #include <lib.h>
 #include <stdbool.h>
 
+#include <shared.h>
+
 //Macro per la verifica dei booleani
 #define ASSERT_BOOL(c){\
   if(!c){\

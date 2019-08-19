@@ -5,7 +5,6 @@
 
 #define USER_MAX_LENGTH 255
 
-bool must_leave;
 void *thread_worker(void *arg);
 
 #endif

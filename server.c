@@ -16,6 +16,7 @@
 #include <fcntl.h>
 #include <ftw.h>
 
+#include <shared.h>
 #include <thread_worker.h>
 #include <hashtable.h>
 

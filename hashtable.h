@@ -1,9 +1,7 @@
-#include <lib.h>
 #include <pthread.h>
 
 #if !defined(_HASHTABLE)
 #define _HASHTABLE
-
 
 typedef struct _linkedlist {
   char* name;

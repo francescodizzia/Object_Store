@@ -15,7 +15,7 @@
 #include <ctype.h>
 #include <fcntl.h>
 
-#include <lib.h>
+#include <shared.h>
 #include <thread_worker.h>
 #include <server.h>
 
@@ -122,7 +122,7 @@ void store(int connfd, char* currentUser ,char* name, long int len, char* newlin
   int b = MAX_HEADER_SIZE-10-strlen(name)-getNumberOfDigits(len);
 
 
-  int n=-1;
+  int n;
   if(len-b > 0){
     //printf("len-b: %d",len-b);
     memcpy(data,(newline+2),b);
@@ -131,10 +131,8 @@ void store(int connfd, char* currentUser ,char* name, long int len, char* newlin
     n = readn(connfd, ((char*) data)+b,len-b);
 
     setBlockingFD(connfd, false);
-  //  if(n < 0){sendKO(connfd, currentUser, "STORE", NULL); return;}
+    if(n <= 0){sendKO(connfd, currentUser, "STORE", name, NULL); return;}
 
-
-    //setBlockingFD(connfd, false);
   }
   else memcpy(data,(void*)(newline+2),len);
 

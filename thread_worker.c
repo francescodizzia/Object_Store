@@ -15,7 +15,7 @@
 #include <ctype.h>
 #include <fcntl.h>
 
-#include <lib.h>
+#include <shared.h>
 #include <server.h>
 #include <parser.h>
 #include <hashtable.h>

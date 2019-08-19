@@ -7,7 +7,6 @@ do
 done
 wait
 
-: '
 for i in {1..50}
 do
   if [ "${i}" -le "30" ]
@@ -19,4 +18,3 @@ do
 done
 
 wait
-'

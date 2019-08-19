@@ -17,7 +17,7 @@
 #include <stdbool.h>
 
 #include <hashtable.h>
-#include <lib.h>
+#include <shared.h>
 
 //Inserisce la stringa 'name' nella lista con testa 'head'
 void insertLinkedList(linkedlist* *head, char* name){
