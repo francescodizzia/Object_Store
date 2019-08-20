@@ -3,12 +3,12 @@ CFLAGS = -std=c99 -D_POSIX_C_SOURCE=200809L -g -Wall -pedantic -L. -I. #-fsaniti
 SOCKNAME = objstore.sock
 VALGRIND_FLAGS = --leak-check=full --show-leak-kinds=all #-v
 
-SERVER_COMPILE = server.c thread_worker.c parser.c hashtable.c common.c
-CLIENT_COMPILE = client.c common.c
+
+default_target: all
 
 all: clean dir server client
 
-dir :
+dir:
 	mkdir data
 
 test: server client
@@ -21,17 +21,17 @@ test2:
 dserver: server
 	valgrind $(VALGRIND_FLAGS) ./server
 
-server: $(SERVER_COMPILE)
-	$(CC) $(CFLAGS) $(SERVER_COMPILE) -o $@ -lpthread
+server: server.c thread_worker.c parser.c hashtable.c common.c
+	$(CC) $(CFLAGS) $? -o $@ -lpthread
 
 client: client.c libobjstore.a
-	$(CC) $(CFLAGS) $(CLIENT_COMPILE) -o $@ -lobjstore -lpthread
+	$(CC) $(CFLAGS) $< -o $@ -lobjstore
 
 evilClient: evilClient.c libobjstore.a
-	$(CC) $(CFLAGS) $< common.c -o $@ -lobjstore -lpthread
+	$(CC) $(CFLAGS) $< -o $@ -lobjstore
 
-libobjstore.a: lib.o
-	ar rvs $@ $<
+libobjstore.a: lib.o common.o
+	ar rvs $@ $?
 
 %.o: %.c %.h
 	$(CC) $(CFLAGS) -c $< -o $@
