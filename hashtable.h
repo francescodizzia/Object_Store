@@ -2,17 +2,19 @@
 #define _HASHTABLE
 #include <pthread.h>
 
-
+//Struttura per le linked list
 typedef struct _linkedlist {
   char* name;
   struct _linkedlist *next;
 } linkedlist;
 
+//Struttura per le celle della hash table
 typedef struct _cell {
   linkedlist* list;
   pthread_mutex_t mtx;
 } cell;
 
+//Struttura della hash table
 typedef struct _hashtable{
   cell *field;
   size_t size;
