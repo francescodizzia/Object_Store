@@ -16,15 +16,15 @@
 #include <fcntl.h>
 #include <ftw.h>
 
-#include <shared.h>
+#include <common.h>
 #include <thread_worker.h>
 #include <hashtable.h>
 
 #define HASH_TABLE_SIZE 256
-
 #define ONE_MB 1000000
 
 
+//Flag 
 volatile sig_atomic_t running = true;
 pthread_mutex_t client_mtx = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t fs_mtx = PTHREAD_MUTEX_INITIALIZER;
@@ -37,7 +37,7 @@ size_t total_size = 0;
 size_t objects = 0;
 size_t folders = -1;
 
-void cleanup() {
+void cleanup(){
   unlink(SOCKNAME);
 }
 

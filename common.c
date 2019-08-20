@@ -16,7 +16,7 @@
 #include <sys/stat.h>
 #include <stdbool.h>
 
-#include <shared.h>
+#include <common.h>
 
 //Funzione che, dato un intero, restituisce il numero di cifre
 //(Si è preferito creare una funzione ad-hoc anziché fare una cosa del

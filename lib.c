@@ -16,7 +16,7 @@
 #include <sys/stat.h>
 #include <stdbool.h>
 
-#include <shared.h>
+#include <common.h>
 
 #define REGISTER_LENGTH 11
 #define STORE_LENGTH 10
@@ -98,7 +98,7 @@ void *getDataResponseMsg(){
 }
 
 
-//Connessione all'ObjectStore, con un determinato nome utente
+//Connessione all'Object Store, con un determinato nome utente
 int os_connect(char *name) {
 
   //Se il file descriptor non è stato resettato, vuol dire che il client è attualmente connesso
@@ -122,14 +122,14 @@ int os_connect(char *name) {
 
   //Calcolo la dimensione necessaria per il buffer
   int len = strlen(name);
-  int N = len + REGISTER_LENGTH + 1;
+  int N = len + REGISTER_LENGTH;
 
   //Creo il buffer, lo imposto secondo le regole dettate dal protocollo
-  char* buff = calloc(N, sizeof(char));
+  char* buff = calloc(N+1, sizeof(char));
   sprintf(buff,"REGISTER %s \n",name);
 
   //Provo a inviare il messaggio
-	int n = write(fd, buff, N-1);
+	int n = writen(fd, buff, N);
 
   //Errore nella write: fallimento
   if(n < 0)return false;
@@ -180,13 +180,13 @@ int os_store(char *name, void *block, size_t len) {
 //Restituisce un puntatore al blocco dati dell'oggetto, oppure NULL in caso di fallimento
 void *os_retrieve(char* name){
   //Solito calcolo della dimensione e creazione del buffer
-  int N = strlen(name) + RETRIEVE_LENGTH + 1;
-  char* buff = calloc(N, sizeof(char));
+  int N = strlen(name) + RETRIEVE_LENGTH;
+  char* buff = calloc(N+1, sizeof(char));
   sprintf(buff, "RETRIEVE %s \n", name);
   if(!buff) return NULL;
 
   //Provo a mandare il messaggio
-  int w = writen(fd, buff, N-1);
+  int w = writen(fd, buff, N);
   free(buff);
 
   //Fallimento nella write, ritorno NULL
@@ -202,11 +202,11 @@ void *os_retrieve(char* name){
 int os_delete(char* name){
   //Ancora una volta, calcolo della dimensione del buffer, formattazione
   //via sprintf e scrittura
-  int N = strlen(name) + DELETE_LENGTH + 1;
-  char* buff = calloc(N, sizeof(char));
+  int N = strlen(name) + DELETE_LENGTH;
+  char* buff = calloc(N+1, sizeof(char));
   sprintf(buff,"DELETE %s \n", name);
 
-  int w = writen(fd, buff, N-1);
+  int w = writen(fd, buff, N);
   free(buff);
 
   //La write fallisce: ritorno FALSE

@@ -15,7 +15,7 @@
 #include <ctype.h>
 #include <fcntl.h>
 
-#include <shared.h>
+#include <common.h>
 #include <thread_worker.h>
 #include <server.h>
 

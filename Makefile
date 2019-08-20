@@ -3,8 +3,8 @@ CFLAGS = -std=c99 -D_POSIX_C_SOURCE=200809L -g -Wall -pedantic -L. -I. #-fsaniti
 SOCKNAME = objstore.sock
 VALGRIND_FLAGS = --leak-check=full --show-leak-kinds=all #-v
 
-SERVER_COMPILE = server.c thread_worker.c parser.c hashtable.c shared.c
-CLIENT_COMPILE = client.c shared.c
+SERVER_COMPILE = server.c thread_worker.c parser.c hashtable.c common.c
+CLIENT_COMPILE = client.c common.c
 
 all: clean dir server client
 
@@ -24,7 +24,7 @@ dserver: server
 server: $(SERVER_COMPILE)
 	$(CC) $(CFLAGS) $(SERVER_COMPILE) -o $@ -lpthread
 
-client: client.c shared.c libobjstore.a
+client: client.c libobjstore.a
 	$(CC) $(CFLAGS) $(CLIENT_COMPILE) -o $@ -lobjstore -lpthread
 
 evilClient: evilClient.c libobjstore.a
@@ -37,7 +37,7 @@ libobjstore.a: lib.o
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	$(RM) ./*.o ./*.out ./server ./client ./$(SOCKNAME) ./testout.log ./*.a
+	$(RM) ./*.o ./*.out ./server ./client ./$(SOCKNAME) ./testout.log ./*.a ./evilClient
 	$(RM) -r ./data/* ./data
 	clear
 .PHONY: clean dclient dserver all
