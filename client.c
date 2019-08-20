@@ -13,7 +13,7 @@
 #include <lib.h>
 #include <stdbool.h>
 
-#include <common.h>
+//#include <common.h>
 
 //Macro per la verifica dei booleani
 #define ASSERT_BOOL(c){\
@@ -205,7 +205,7 @@ bool test4(char* user, char* src, char* dest){
   if(!buffer) return false;
 
   //Leggo il contenuto del file e lo metto nel buffer
-  readn(new_fd, buffer, size);
+  read(new_fd, buffer, size);
 
   //Effettuo la store, inviando come dati il buffer manipolato poco prima
   result = os_store(dest, buffer, size);

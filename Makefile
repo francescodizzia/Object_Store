@@ -28,7 +28,7 @@ client: client.c libobjstore.a
 	$(CC) $(CFLAGS) $(CLIENT_COMPILE) -o $@ -lobjstore -lpthread
 
 evilClient: evilClient.c libobjstore.a
-	$(CC) $(CFLAGS) $< -o $@ -lobjstore -lpthread
+	$(CC) $(CFLAGS) $< common.c -o $@ -lobjstore -lpthread
 
 libobjstore.a: lib.o
 	ar rvs $@ $<
