@@ -157,7 +157,7 @@ void* signal_handler(void* ptr){
         //Ogni altro tipo di segnale (che non sia SIGPIPE) setta la variabile running
         //a FALSE, procedendo quindi alla terminazione 'gentile' del server, dei
         //thread worker e dello stesso thread dei segnali
-        else if(signal != SIGPIPE
+        else if(signal != SIGPIPE)
           running = false;
     }
 
