@@ -154,10 +154,10 @@ void* signal_handler(void* ptr){
         //Se il segnale è di tipo SIGUSR1, procedo con la stampa delle statistiche
         if(signal == SIGUSR1)
           printStats();
-        //Ogni altro tipo di segnale setta la variabile running a FALSE, procedendo
-        //quindi alla terminazione 'gentile' del server, dei thread worker e dello
-        //stesso thread dei segnali
-        else
+        //Ogni altro tipo di segnale (che non sia SIGPIPE) setta la variabile running
+        //a FALSE, procedendo quindi alla terminazione 'gentile' del server, dei
+        //thread worker e dello stesso thread dei segnali
+        else if(signal != SIGPIPE
           running = false;
     }
 

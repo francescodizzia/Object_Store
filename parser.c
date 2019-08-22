@@ -124,12 +124,10 @@ void store(int connfd, char* currentUser ,char* name, long int len, char* newlin
 
   int n;
   if(len-b > 0){
-    //printf("len-b: %d",len-b);
     memcpy(data,(newline+2),b);
 
     setBlockingFD(connfd, true);
     n = readn(connfd, ((char*) data)+b,len-b);
-
     setBlockingFD(connfd, false);
     if(n <= 0){sendKO(connfd, currentUser, "STORE", name, NULL); return;}
 
