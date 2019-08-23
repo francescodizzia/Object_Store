@@ -48,7 +48,7 @@ bool createFile(char* filename, void* data, char* username, size_t size){
  path = getUserPath(username);
  strcat(path,filename);
 
- //'Apro' il file, creandolo se non esiste, se è già esistente viene 'troncato' attraverso il flag O_TRUNC
+ //Apro il file, creandolo se non esiste, se è già esistente viene 'troncato' attraverso il flag O_TRUNC
  int new_fd = open(path, O_CREAT | O_WRONLY | O_TRUNC, S_IRUSR | S_IWUSR);
 
  //Errore nella open, esco

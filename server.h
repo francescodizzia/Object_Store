@@ -1,6 +1,7 @@
+#include <hashtable.h>
+
 #if !defined(_SERVER)
 #define _SERVER
-#include <hashtable.h>
 
 extern volatile sig_atomic_t running;
 extern pthread_cond_t empty;

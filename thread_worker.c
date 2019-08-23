@@ -14,6 +14,7 @@
 #include <pthread.h>
 #include <ctype.h>
 #include <fcntl.h>
+#include <stdbool.h>
 
 #include <common.h>
 #include <server.h>
@@ -21,25 +22,44 @@
 #include <hashtable.h>
 #include <thread_worker.h>
 
-bool must_leave = false;
+
+//Cambio il fd in stato 'blocking' o 'unblocking' in funzione
+//della variabile booleana blocking
+void setBlockingFD(int connfd, bool blocking){
+  int flags;
+
+  //Metto il fd in stato 'bloccante'
+  if(blocking){
+    flags = fcntl(connfd, F_GETFL, 0);
+    flags &= ~O_NONBLOCK;
+    fcntl(connfd, F_SETFL, flags);
+  }
+  //Metto il fd in stato 'unblocking'
+  else{
+    flags = fcntl(connfd, F_GETFL, 0);
+    fcntl(connfd, F_SETFL, flags | O_NONBLOCK);
+  }
+
+}
+
 
 void *thread_worker(void *arg) {
   long connfd = (long)arg;
 
-  int flags = fcntl(connfd, F_GETFL, 0);
-  fcntl(connfd, F_SETFL, flags | O_NONBLOCK);
+  //Imposto il file descriptor come 'unblocking'
+  setBlockingFD(connfd, false);
 
   //Alloco header e la stringa che mi andra' a rappresentare l'utente attualmente connesso
   char *header = calloc(MAX_HEADER_SIZE, sizeof(char));
   char currentUser[USER_MAX_LENGTH];
   memset(currentUser,'\0',USER_MAX_LENGTH);
 
-  //Incremento il numero di client connessi
+  //Incremento il numero di client connessi (sezione critica)
   pthread_mutex_lock(&client_mtx);
   n_clients++;
   pthread_mutex_unlock(&client_mtx);
 
-  int u = 0;
+  int u;
 
   //Loop del thread: ogni volta che mi arriva una richiesta vado ad effettuare il parsing
   //di tale richiesta ed eseguo le corrispettive operazioni
@@ -54,14 +74,10 @@ void *thread_worker(void *arg) {
     if(u == -1){
       if(errno == EAGAIN && running)
         continue;
-      else{
-        //printf("currentUser: %s error: %s\n",currentUser,strerror(errno));
-        break;
-      }
+      else break;
     }
     if(u == 0)break;
 
-    //printf("ciao, sono %s\nmsg:%s\n",currentUser,header);
 
     //Effettuo il parsing e l'eventuale esecuzione dell'operazione richiesta
     parse_request(connfd,header,currentUser);

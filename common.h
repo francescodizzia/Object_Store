@@ -1,8 +1,9 @@
-#if !defined(_COMMON)
-#define _COMMON
 #include <sys/types.h>
 #include <ctype.h>
 #include <stdbool.h>
+
+#if !defined(_COMMON)
+#define _COMMON
 
 #define SOCKNAME "objstore.sock"
 

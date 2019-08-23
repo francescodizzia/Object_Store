@@ -118,14 +118,14 @@ void spawnThreadWorker(long connfd){
 
   //Provo a inizializzare gli attributi del thread
   if(pthread_attr_init(&thattr) != 0){
-	    printf("pthread_attr_init FALLITA\n");
+	    printf("[Thread worker] pthread_attr_init FALLITA\n");
 	    close(connfd);
 	    return;
   }
 
   //Tento di settare il thread in modalità 'detached'
   if(pthread_attr_setdetachstate(&thattr,PTHREAD_CREATE_DETACHED) != 0){
-	   printf("pthread_attr_setdetachstate FALLITA\n");
+	   printf("[Thread worker] pthread_attr_setdetachstate FALLITA\n");
      pthread_attr_destroy(&thattr);
      close(connfd);
      return;
@@ -133,7 +133,7 @@ void spawnThreadWorker(long connfd){
 
   //Provo a creare il thread worker (vedere il file 'thread_worker.c')
   if(pthread_create(&thid, &thattr, thread_worker, (void*)connfd) != 0){
-     printf("pthread_create FALLITA");
+     printf("[Thread worker] pthread_create FALLITA");
 	   pthread_attr_destroy(&thattr);
 	   close(connfd);
 	   return;
@@ -154,9 +154,9 @@ void* signal_handler(void* ptr){
         //Se il segnale è di tipo SIGUSR1, procedo con la stampa delle statistiche
         if(signal == SIGUSR1)
           printStats();
-        //Ogni altro tipo di segnale (che non sia SIGPIPE) setta la variabile running
-        //a FALSE, procedendo quindi alla terminazione 'gentile' del server, dei
-        //thread worker e dello stesso thread dei segnali
+        //Ogni altro tipo di segnale (che non sia SIGPIPE, che quindi viene ignorato)
+        //setta la variabile running a FALSE, procedendo quindi alla terminazione 'gentile'
+        //del server, dei thread worker e dello stesso thread dei segnali
         else if(signal != SIGPIPE)
           running = false;
     }
@@ -172,20 +172,20 @@ void spawnSignalThread(void* ptr){
 
   //Provo a inizializzare gli attributi del thread
   if(pthread_attr_init(&thattr) != 0){
-	   printf("pthread_attr_init FALLITA\n");
+	   printf("[Signal Thread] pthread_attr_init FALLITA\n");
 	   return;
   }
 
   //Tento di settare il thread in modalità 'detached'
   if(pthread_attr_setdetachstate(&thattr,PTHREAD_CREATE_DETACHED) != 0){
-	   printf("pthread_attr_setdetachstate FALLITA\n");
+	   printf("[Signal Thread] pthread_attr_setdetachstate FALLITA\n");
      pthread_attr_destroy(&thattr);
      return;
   }
 
   //Provo a creare il signalThread(vedere la funzione 'signal_handler' definita sopra)
   if(pthread_create(&thid, &thattr, signal_handler, ptr) != 0){
-     printf("pthread_create FALLITA");
+     printf("[Signal Thread] pthread_create FALLITA");
 	   pthread_attr_destroy(&thattr);
 	   return;
   }
@@ -242,7 +242,7 @@ int main(){
     return -1;
   }
 
-
+  //Dichiaro il timer e inizializzo il necessario per la select
   struct timeval timer;
   fd_set fds,r_fds;
 
@@ -251,9 +251,15 @@ int main(){
 
   int select_ret, connfd;
 
+  //Loop del server: va avanti finché non viene dato il comando di terminazione
+  //(tramite un segnale, che non sia SIGUSR1 o SIGPIPE)
   while(running){
-    timer.tv_sec = 0;
-    timer.tv_usec = 10000; //10000 microsecondi sono 10 millisecondi
+    //Setto il timer a 10 ms
+    timer.tv_sec = 0; // 0 secondi
+    timer.tv_usec = 10000; //10000 microsecondi = 10 ms
+
+    //Il fd verrà modificato ad ogni chiamata della select, quindi lo ripristino
+    //ad ogni iterazione
     r_fds = fds;
 
     //Chiamo la select con timer
@@ -273,6 +279,8 @@ int main(){
   }
 
 
+  //Sezione critica: vado in attesa della terminazione di altri thread, mettendomi
+  //in wait sulla condition variable 'empty'
   pthread_mutex_lock(&client_mtx);
     if(n_clients > 0){
       printf("Attendo la terminazione degli altri thread...\n");
@@ -282,6 +290,7 @@ int main(){
 
   printf("Tutti i thread sono stati terminati con successo!\n");
 
+  //Libero dalla memoria la tabella hash e chiudo il file descriptor del server
   freeHashTable(&HT);
   close(server_fd);
 

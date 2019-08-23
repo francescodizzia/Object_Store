@@ -14,6 +14,7 @@
 #include <pthread.h>
 #include <ctype.h>
 #include <fcntl.h>
+#include <stdbool.h>
 
 #include <common.h>
 #include <thread_worker.h>
@@ -21,20 +22,6 @@
 
 #define target_output stdout
 
-void setBlockingFD(int connfd, int blocking){
-  int flags;
-
-  if(blocking){
-    flags = fcntl(connfd, F_GETFL, 0);
-    flags &= ~O_NONBLOCK;
-    fcntl(connfd, F_SETFL, flags);
-  }
-  else{
-    flags = fcntl(connfd, F_GETFL, 0);
-    fcntl(connfd, F_SETFL, flags | O_NONBLOCK);
-  }
-
-}
 
 //Procedura che invia come risposta 'OK' al client e stampa alcune informazioni utili a schermo
 void sendOK(int connfd, char* currentUser, char* operation, char* obj_name){
@@ -66,6 +53,7 @@ void sendKO(int connfd, char* currentUser, char* operation, char* obj_name, char
 //  fprintf(target_output,"user: %-15s fd: %-10dop: %-10s\t%s",currentUser, connfd,operation,fail_buf);
   fprintf(target_output,"%-15s %-10s\tfd: %-10dop: %-10s\t%s",  currentUser, obj_name, connfd, operation, fail_buf);
 }
+
 
 //Procedura che si occupa della disconnessione dell'utente
 void leave(int connfd, char* currentUser){

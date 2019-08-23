@@ -1,6 +1,7 @@
+#include <pthread.h>
+
 #if !defined(_HASHTABLE)
 #define _HASHTABLE
-#include <pthread.h>
 
 //Struttura per le linked list
 typedef struct _linkedlist {
