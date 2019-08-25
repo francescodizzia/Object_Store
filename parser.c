@@ -22,7 +22,6 @@
 
 #define target_output stdout
 
-
 //Procedura che invia come risposta 'OK' al client e stampa alcune informazioni utili a schermo
 void sendOK(int connfd, char* currentUser, char* operation, char* obj_name){
   writen(connfd,"OK \n",4);
@@ -106,6 +105,12 @@ void register_(int connfd, char* currentUser, char* name){
 
 //Procedura relativa allo storing di un oggetto
 void store(int connfd, char* currentUser ,char* name, long int len, char* newline){
+  if(len < 0){
+    sendKO(connfd, currentUser, "STORE", name, "Length not valid");
+    return ;
+  }
+
+
   //Creo il buffer che avrà il contenuto dell'oggetto (quindi di lunghezza len)
   void *data = calloc(len,1);
 
@@ -201,7 +206,6 @@ void retrieve(int connfd, char* currentUser, char* name){
 
     //Stampo le info a schermo
     fprintf(target_output,"%-15s %-10s\tfd: %-10dop: %-10s\tOK \n",  currentUser, name, connfd, "RETRIEVE");
-
 
     //Libero le risorse
     free(buff);

@@ -25,7 +25,6 @@ int fd = -1;
 //opportunamente settata nelle varie funzioni (os_register, os_store, etc...)
 char last_error_msg[256];
 
-
 //Stampa l'ultimo messaggio d'errore (utile durante i test)
 void printLastErrorMsg(){
   printf("ERROR: %s\n", last_error_msg);
@@ -57,11 +56,11 @@ void *getDataResponseMsg(){
   memset(response_buf, '\0', MAX_RESPONSE_SIZE);
 
   //Vado a leggere la risposta e a metterla nel buffer
-  read(fd,response_buf,MAX_RESPONSE_SIZE);
+  read(fd,response_buf, MAX_RESPONSE_SIZE);
 
   //Preparo il necessario per tokenizzare
   char* ptr = NULL;
-  long int len = 0;
+  long int len = -1;
   char* first_str =  strtok_r(response_buf, " ", &ptr);
 
   //Se ho avuto dei problemi a tokenizzare, oppure
@@ -79,10 +78,10 @@ void *getDataResponseMsg(){
 
   if(len_str != NULL) len = atol(len_str);
 
-
-  if(len == 0){
+  //Lunghezza non valida
+  if(len < 0){
     memset(last_error_msg, '\0', 256);
-    strcpy(last_error_msg, "KO [Object length is equal to zero]\n");
+    strcpy(last_error_msg, "KO [Object length isn't valid]\n");
     return NULL;
   }
 
@@ -119,7 +118,6 @@ void *getDataResponseMsg(){
 
 //Connessione all'Object Store, con un determinato nome utente
 int os_connect(char *name) {
-
   //Se il file descriptor non è stato resettato, vuol dire che il client è attualmente connesso
   //e sta tentando di registrarsi ulteriormente (cosa non permessa)
   if(fd != -1){
@@ -161,11 +159,12 @@ int os_connect(char *name) {
 
 //Store di un determinato oggetto, con nome 'name', lunghezza 'len' e contenuto 'block'
 int os_store(char *name, void *block, size_t len) {
-  //Il puntatore al blocco è nullo o la lunghezza è minore o uguale a zero: fallimento
-  if(block == NULL || len <= 0 )return false;
+  //La lunghezza è minore a zero: fallimento
+  if(len < 0)return false;
 
   //Calcolo della dimensione necessaria al buffer per l'invio della richiesta
   size_t store_size = STORE_LENGTH + strlen(name) + getNumberOfDigits(len);
+
   //Crezione del buffer
   char* buff = calloc(store_size+1, sizeof(char));
   if(!buff)return false;
