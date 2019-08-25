@@ -104,82 +104,117 @@ void register_(int connfd, char* currentUser, char* name){
 
 }
 
-//Procedura relativa alla store di un oggetto
+//Procedura relativa allo storing di un oggetto
 void store(int connfd, char* currentUser ,char* name, long int len, char* newline){
+  //Creo il buffer che avrà il contenuto dell'oggetto (quindi di lunghezza len)
   void *data = calloc(len,1);
-  int b = MAX_HEADER_SIZE-10-strlen(name)-getNumberOfDigits(len);
 
+  //Con un semplice conto vado a calcolare la quantità di dati nella store che
+  //ho già letto con la read nel thread worker
+  int r = MAX_HEADER_SIZE - STORE_LENGTH - strlen(name) - getNumberOfDigits(len);
 
-  int n;
-  if(len-b > 0){
-    memcpy(data,(newline+2),b);
+  //Se la differenza tra la lunghezza dei dati totali e la lunghezza dei dati letti è
+  //maggiore di zero, allora vuol dire che non ho finito e devo fare una ulteriore read
+  //di lunghezza len-r per finire la lettura totale
+  if(len-r > 0){
+    //Copio la porzione di dati dopo il newline (e lo spazio)
+    memcpy(data,(newline+2),r);
 
+    //Imposto il file descriptor come bloccante
     setBlockingFD(connfd, true);
-    n = readn(connfd, ((char*) data)+b,len-b);
+
+    //Sfruttando l'aritmetica dei puntatori, eseguo una read, di dimensione len-r
+    //(ovvero della stessa quantità dei dati rimanenti da leggere) e vado a copiarlo
+    //in data (mantenendo la porzione precedente di dati)
+    int n = readn(connfd, ((char*) data)+r,len-r);
+
+    //Rimetto il file descriptor in modalità unblocking
     setBlockingFD(connfd, false);
+
+    //Ho avuto un problema nel leggere la parte supplementare dei dati,
+    //e quindi mando KO
     if(n <= 0){sendKO(connfd, currentUser, "STORE", name, NULL); return;}
 
   }
+  //Se la differenza è uguale a zero (o minore) vuol dire che ho già letto
+  //tutti i dati che mi servivano e posso procedere con la copia dei dati
   else memcpy(data,(void*)(newline+2),len);
 
+  //Se per qualche motivo l'utente non è registrato, fallisco con KO
   if(currentUser[0] == '\0')
     sendKO(connfd, currentUser, "STORE", name, "User not registered");
+
+  //L'utente è registrato (come normalmente dovrebbe essere)
   else{
+      //Provo a creare il file oggetto con il contenuto letto, in caso di successo
+      //mando OK, altrimenti KO
       if(createFile(name,data,currentUser,len))
         sendOK(connfd, currentUser, "STORE", name);
       else
         sendKO(connfd, currentUser, "STORE", name, NULL);
   }
 
-
+  //Libero il buffer temporaneo dalla memoria
   free(data);
 }
 
+//Procedura relativa al retrieve dei dati
 void retrieve(int connfd, char* currentUser, char* name){
 
+  //Ottengo il path relativo all'oggetto
   char* user_path = getUserPath(currentUser);
   char* file_path = calloc(strlen(user_path)+strlen(name)+1 ,sizeof(char));
   strcat(file_path,user_path);
   strcat(file_path,name);
 
-
+  //Apro il file in lettura
   int new_fd = open(file_path, O_RDONLY, S_IRUSR | S_IWUSR);
 
-
+  //Open utilizzata senza problemi
   if(new_fd != -1){
+    //Tramite la funzione 'stat' ottengo la dimensione in byte del file
     struct stat finfo;
     stat(file_path, &finfo);
-
     size_t size = finfo.st_size;
+
+    //Creo un blocco della stessa dimensione
     void *block = calloc(size, 1);
 
+    //Metto il contenuto del file dentro il buffer del blocco
     readn(new_fd, block ,size);
 
-    int N = 8 + getNumberOfDigits(size);
+    //Preparo la dimensione e il buffer per il messaggio da inviare
+    //al client
+    int N = DATA_MSG_LENGTH + getNumberOfDigits(size);
     char* buff = calloc(N + 1, sizeof(char));
 
     sprintf(buff,"DATA %lu \n ", size);
 
-    char* tmp = calloc(N+1+size,sizeof(char));
-    memcpy(tmp,buff,N);
-    memcpy(tmp+N,block,size);
+    //Prendo il contenuto del buffer temporaneo e, copiando anche il blocco
+    //creo il buffer 'definitivo'
+    char* def = calloc(N+1+size,sizeof(char));
+    memcpy(def,buff,N);
+    memcpy(def+N,block,size);
 
-    int w = writen(connfd,tmp,N+size);
-    if(w == -1)printf("FAIL\n");
+    //Invio il messaggio finito
+    writen(connfd,def,N+size);
+
+    //Stampo le info a schermo
     fprintf(target_output,"%-15s %-10s\tfd: %-10dop: %-10s\tOK \n",  currentUser, name, connfd, "RETRIEVE");
 
+
+    //Libero le risorse
     free(buff);
-    free(tmp);
+    free(def);
     free(block);
     close(new_fd);
-    //fclose(f);
  	 }
+   //In caso di errore invece mando KO
    else
     sendKO(connfd, currentUser, "RETRIEVE", name, "Can't retrieve the object");
 
   free(user_path);
   free(file_path);
-
 }
 
 

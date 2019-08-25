@@ -18,12 +18,6 @@
 
 #include <common.h>
 
-#define REGISTER_LENGTH 11
-#define STORE_LENGTH 10
-#define RETRIEVE_LENGTH 11
-#define DELETE_LENGTH 9
-#define DATA_MSG_LENGTH 8
-
 //Valore di default del fd globale
 int fd = -1;
 
@@ -55,27 +49,36 @@ bool getResponseMsg(){
  return false;
 }
 
-
+//Leggo il buffer di risposta che viene inviato dal server nel caso specifico
+//della retrieve
 void *getDataResponseMsg(){
+  //Preparo il buffer
   char response_buf[MAX_RESPONSE_SIZE];
-
   memset(response_buf, '\0', MAX_RESPONSE_SIZE);
+
+  //Vado a leggere la risposta e a metterla nel buffer
   read(fd,response_buf,MAX_RESPONSE_SIZE);
 
+  //Preparo il necessario per tokenizzare
   char* ptr = NULL;
-  long int len = -1;
+  long int len = 0;
   char* first_str =  strtok_r(response_buf, " ", &ptr);
 
+  //Se ho avuto dei problemi a tokenizzare, oppure
+  //la risposta è di tipo KO, setto il messaggio di errore
+  //e ritorno NULL
   if(first_str == NULL || str_equals(first_str,"KO")){
     memset(last_error_msg, '\0', 256);
     strcpy(last_error_msg, "KO [Can't retrieve the object]");
     return NULL;
   }
 
+  //Tokenizzo la lunghezza e il newline
   char* len_str =  strtok_r(NULL, " ", &ptr);
   char* newline = strtok_r(NULL, " ", &ptr);
 
   if(len_str != NULL) len = atol(len_str);
+
 
   if(len == 0){
     memset(last_error_msg, '\0', 256);
@@ -83,17 +86,33 @@ void *getDataResponseMsg(){
     return NULL;
   }
 
+  //Preparo il buffer con i dati
   void *data = calloc(len,1);
-  int b = MAX_RESPONSE_SIZE-DATA_MSG_LENGTH-getNumberOfDigits(len);
+
+  //In modo simmetrico alla store (del parser), vado a calcolare la quantità
+  //di dati già letti dalla prima read
+  int r = MAX_RESPONSE_SIZE-DATA_MSG_LENGTH-getNumberOfDigits(len);
 
   int n;
-  if(len-b > 0){
-    memcpy(data,(newline+2),b);
-    n = readn(fd, ((char*) data)+b,len-b);
+
+  //La differenza tra la lunghezza e i dati letti è maggiore di zero: devo
+  //fare una ulteriore read di lunghezza 'len-r' per finire la lettura dei dati
+  if(len-r > 0){
+    //Copio i dati parziali nel buffer
+    memcpy(data,(newline+2),r);
+
+    //Completo la lettura e metto il tutto nel buffer
+    n = readn(fd, ((char*) data)+r,len-r);
+
+    //Errore: ritorno NULL
     if(n <= 0)return NULL;
   }
+  //Se avevo già completato con la prima read, posso direttamente copiare nel
+  //buffer il contenuto
   else memcpy(data,(void*)(newline+2),len);
 
+
+ //Ritorno i dati
  return data;
 }
 

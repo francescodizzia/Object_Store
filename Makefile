@@ -30,6 +30,9 @@ client: client.c libobjstore.a
 evilClient: evilClient.c libobjstore.a
 	$(CC) $(CFLAGS) $< -o $@ -lobjstore
 
+lenClient: len.c libobjstore.a
+	$(CC) $(CFLAGS) $< -o $@ -lobjstore
+
 libobjstore.a: lib.o common.o
 	ar rvs $@ $?
 
