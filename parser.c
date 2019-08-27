@@ -133,9 +133,6 @@ void store(int connfd, char* currentUser ,char* name, long int len, char* newlin
     //in data (mantenendo la porzione precedente di dati)
     int n = readn(connfd, ((char*) data)+r,len-r);
 
-    if(n == -1 && errno == EAGAIN)
-      printf("PROBLEM:len-r: %ld user %s, data: %s \n\n", len-r, currentUser, (char*) data);
-
     //Rimetto il file descriptor in modalità unblocking
     setBlockingFD(connfd, false);
 
@@ -263,7 +260,6 @@ void parse_request(int connfd, char *str, char* currentUser){
  //Converto la stringa che descrive la lunghezza in un numero
  if(len_str != NULL)
   len = atol(len_str);
-
 
  //Per ogni operazione decodificata vado ad eseguire la rispettiva procedura che
  //si occupa di fare tutto il necessario
