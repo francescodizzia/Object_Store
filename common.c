@@ -81,21 +81,21 @@ bool str_equals(char* a, char* b){
 
 
 //Funzione readn, vista a lezione
-int readn(long fd, void *buf, size_t size) {
-    size_t left = size;
-    int r;
-    char *bufptr = (char*)buf;
+int readn(long fd, void *buf, size_t size){
+  size_t left = size;
+  int r;
+  char *bufptr = (char*)buf;
 
   while(left > 0){
-	   if((r = read((int)fd ,bufptr,left)) == -1) {
-	     if (errno == EINTR) continue;
-      return -1;
-	   }
+    if((r = read((int)fd ,bufptr,left)) == -1){
+	     if(errno == EINTR) continue;
+       return -1;
+    }
 
-     if (r == 0) return 0;
+    if(r == 0) return 0;
 
-     left -= r;
-	   bufptr += r;
+    left -= r;
+    bufptr += r;
   }
 
   return size;
@@ -103,22 +103,22 @@ int readn(long fd, void *buf, size_t size) {
 
 
 //Funzione writen, vista a lezione
-int writen(long fd, void *buf, size_t size) {
-    size_t left = size;
-    int r;
-    char *bufptr = (char*)buf;
+int writen(long fd, void *buf, size_t size){
+  size_t left = size;
+  int r;
+  char *bufptr = (char*)buf;
 
-    while(left > 0) {
-	    if((r = write((int)fd ,bufptr,left)) == -1) {
-	        if (errno == EINTR) continue;
-	    return -1;
-	    }
-
-      if(r == 0) return 0;
-
-      left -= r;
-	    bufptr += r;
+  while(left > 0){
+    if((r = write((int)fd ,bufptr,left)) == -1){
+	     if(errno == EINTR) continue;
+       return -1;
     }
 
-    return 1;
+  if(r == 0) return 0;
+
+  left -= r;
+  bufptr += r;
+  }
+
+  return 1;
 }

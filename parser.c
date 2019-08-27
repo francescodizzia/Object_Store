@@ -112,7 +112,7 @@ void store(int connfd, char* currentUser ,char* name, long int len, char* newlin
 
 
   //Creo il buffer che avrà il contenuto dell'oggetto (quindi di lunghezza len)
-  void *data = calloc(len,1);
+  void *data = calloc(len, 1);
 
   //Con un semplice conto vado a calcolare la quantità di dati nella store che
   //ho già letto con la read nel thread worker
@@ -132,6 +132,9 @@ void store(int connfd, char* currentUser ,char* name, long int len, char* newlin
     //(ovvero della stessa quantità dei dati rimanenti da leggere) e vado a copiarlo
     //in data (mantenendo la porzione precedente di dati)
     int n = readn(connfd, ((char*) data)+r,len-r);
+
+    if(n == -1 && errno == EAGAIN)
+      printf("PROBLEM:len-r: %ld user %s, data: %s \n\n", len-r, currentUser, (char*) data);
 
     //Rimetto il file descriptor in modalità unblocking
     setBlockingFD(connfd, false);

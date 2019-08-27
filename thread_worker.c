@@ -66,7 +66,6 @@ void *thread_worker(void *arg) {
   while(running){
     //Leggo l'header
     u = read(connfd, header, MAX_HEADER_SIZE);
-    //printf("header: %s\n",header);
 
     //Nel caso in cui ci sia un errore nella lettura dell'header o un fallimento nella
     //comunicazione via socket (magari il client relativo al thread si è disconnesso)
@@ -78,9 +77,8 @@ void *thread_worker(void *arg) {
     }
     if(u == 0)break;
 
-
     //Effettuo il parsing e l'eventuale esecuzione dell'operazione richiesta
-    parse_request(connfd,header,currentUser);
+    parse_request(connfd, header, currentUser);
     //Resetto l'header
     memset(header, '\0', MAX_HEADER_SIZE);
   }
