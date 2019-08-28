@@ -3,6 +3,7 @@
 #if !defined(_THREAD_WORKER)
 #define _THREAD_WORKER
 
+//Massima dimensione del filename in UNIX
 #define USER_MAX_LENGTH 255
 
 void setBlockingFD(int connfd, bool blocking);

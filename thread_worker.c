@@ -69,7 +69,8 @@ void *thread_worker(void *arg) {
 
     //Nel caso in cui ci sia un errore nella lettura dell'header o un fallimento nella
     //comunicazione via socket (magari il client relativo al thread si è disconnesso)
-    //esco dal loop
+    //esco dal loop, se invece la risorsa non è disponibile ma il flag è ancora settato
+    //a true, continuo a iterare
     if(u == -1){
       if(errno == EAGAIN && running)
         continue;

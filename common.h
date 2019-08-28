@@ -5,15 +5,20 @@
 #if !defined(_COMMON)
 #define _COMMON
 
+//Nome della socket
 #define SOCKNAME "objstore.sock"
 
+//Massima grandezza di un path su UNIX
 #define MAX_PATH_SIZE 4096
 #define DATA_DIRECTORY "./data/"
 
+//Massima grandezza dell'header di default
 #define MAX_HEADER_SIZE 512
+
+//Massima grandezza della risposta
 #define MAX_RESPONSE_SIZE 128
 
-
+//Lunghezza base dei vari header (inclusi spazi e '\n')
 #define REGISTER_LENGTH 11
 #define STORE_LENGTH 10
 #define RETRIEVE_LENGTH 11

@@ -21,12 +21,14 @@ typedef struct _hashtable{
   size_t size;
 } hashtable;
 
+//Funzioni operanti su liste
 void insertLinkedList(linkedlist* *head, char* name);
 void printLinkedList(linkedlist *head);
 bool isInLinkedList(linkedlist *head, char* target);
 void removeLinkedList(linkedlist* *head, char* target);
 void freeLinkedList(linkedlist* *head);
 
+//Funzioni operanti su hashtable
 unsigned long hash(char *str);
 hashtable createHashTable(size_t N);
 void insertHashTable(hashtable *T, char* elem);

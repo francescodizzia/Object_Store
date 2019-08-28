@@ -44,8 +44,7 @@ Il progetto è stato strutturato in più file al fine di garantire maggiore fles
 
 \subsection{File sorgenti}
 \begin{itemize}
-	\item \emph{server.c} : si occupa di gestire il server, mettendosi in attesa dei client e servendoli creando un relativo thread worker. Una volta
-	dato l'arresto con gli opportuni segnali (di cui si occuperà creando un thread apposito per la gestione dei suddetti), sarà compito suo dare l'avviso di terminazione ai relativi thread, in modo tale da permettere un processo di terminazione "gentile" e pulita. 
+	\item \emph{server.c} : si occupa di gestire il server, mettendosi in attesa dei client e servendoli creando un relativo thread worker.
 	
 	\item \emph{lib.c} : il vero "cuore" dell'Object Store, ovvero la libreria contenente le funzioni richieste (os\_connect, os\_store, etc...)
 	
@@ -64,6 +63,7 @@ Il progetto è stato strutturato in più file al fine di garantire maggiore fles
 
 \end{flushleft}
 
+
 \subsection{Script bash}
 \begin{flushleft}
 \begin{itemize}
@@ -79,6 +79,9 @@ Il progetto è stato strutturato in più file al fine di garantire maggiore fles
 
 \end{itemize}
 \end{flushleft}
+
+
+\newpage
 
 \section{Overview e scelte progettuali}
 \begin{flushleft}
@@ -96,7 +99,7 @@ Il server comprende un ciclo all'interno del quale esso si mette in attesa delle
 \\~\\
 Nelle fasi iniziali del progetto, al posto della select avevo optato per un file descriptor \texttt{non bloccante}, tuttavia ho deciso in seguito di cambiare perché da alcuni test effettuati, osservando attentamente l'utilizzo delle risorse e in particolare della CPU, quest'ultima, anche in assenza di connessioni da parte dei client, continuava a iterare nel ciclo, consumando continuamente il processore e avvicinandosi ad uno stato di \emph{busy waiting}.
 \\~\\
-La select, scelta con un timer opportuno (in questo caso pari a \texttt{10 ms}), permette di alleggerire il carico di lavoro della CPU, senza dover rinunciare alla necessità da parte del server di non fossilizzarsi in attesa che un client si connetta, voglio infatti evitare che il server possa diventare "ostaggio" dei client.
+La select, scelta con un timer opportuno (in questo caso pari a \texttt{10 ms}), permette di alleggerire il carico di lavoro della CPU, senza dover rinunciare alla necessità da parte del server di non fossilizzarsi in attesa che un client si connetta: voglio infatti evitare che il server possa diventare "ostaggio" dei client.
 \end{flushleft}
 
 
@@ -125,7 +128,7 @@ Se il fd non fosse di tipo unblocking, non sarebbe possibile in questo caso far 
 
 Il server e i thread condividono una variabile booleana \texttt{running}, di tipo volatile sig\_atomic\_t: il continuo operare del server e dei thread è dettato da tale variabile, infatti finché è settata a true il loop andrà avanti, sia quello di accettazione dei client, che quello di decodifica delle richieste presente nel thread worker (notare che se il client ha finito e si è già disconnesso il corrispettivo thread worker terminerà ugualmente, a prescindere dalla variabile running).
 \\~\\
-Il server, come già specificato nella traccia, avvia la procedura di terminazione quando riceve un segnale (diverso da SIGUSR1): tutto ciò che farà l'handler dei segnali in quel caso sarà semplicemente settare a false la variabile running, in modo tale da interrompere le continue iterazioni dei cicli, si andranno dunque a eseguire determinate istruzioni per assicurarsi di uscire in modo sicuro.
+Il server, come già specificato nella traccia, avvia la procedura di terminazione quando riceve un segnale (diverso da SIGUSR1 e SIGPIPE): tutto ciò che farà l'handler dei segnali in quel caso sarà semplicemente settare a false la variabile running, in modo tale da interrompere le continue iterazioni dei cicli. Infine si andranno dunque a eseguire determinate istruzioni per assicurarsi di uscire in modo sicuro e corretto.
 \\~\\
 Nel caso del server, esso si metterà in attesa della terminazione di tutti gli altri thread worker, sospendendosi sulla variabile di condizione \texttt{empty}, mentre nel caso dei thread si andrà prima a decrementare la variabile \texttt{n\_clients}, che rappresenta il numero di client attualmente connessi al server, dopodiché si controllerà nuovamente il valore: nel caso sia uguale a zero, verrà mandata una signal al server per svegliarlo, che fatto ciò potrà deallocare le risorse e poi terminare.
 
@@ -134,7 +137,7 @@ Nel caso del server, esso si metterà in attesa della terminazione di tutti gli 
 \subsection{Signal Handler Thread}
 \begin{flushleft}
 
-La gestione dei segnali, considerando l'ambiente multi-threaded, ho deciso di gestirla utilizzando un thread apposito, tale thread, finché la variabile running è settata a true, rimane in attesa dei segnali attraverso la \texttt{sigwait}, per poi andare a verificare la tipologia di segnale ricevuto: nel caso sia un SIGUSR1 allora procederò verso la stampa delle statistiche, in ogni altro caso setto il flag running a false e comincio il necessario per la terminazione. 
+La gestione dei segnali, considerando l'ambiente multi-threaded, ho deciso di gestirla utilizzando un thread apposito. Tale thread, finché la variabile running è settata a true, rimane in attesa dei segnali attraverso la \texttt{sigwait}, per poi andare a verificare la tipologia di segnale ricevuto: nel caso sia un SIGUSR1 allora procederò verso la stampa delle statistiche, in ogni altro caso (fatta eccezione per SIGPIPE, che viene ignorato) setto il flag running a false e preparo il necessario per la terminazione. 
 \\
 Prima di generare il thread avrò già mascherato i vari segnali, eseguendo \texttt{sigfillset} per comunicare di voler bloccare tutti i segnali e settando la maschera con \texttt{pthread\textunderscore sigmask}.
 
@@ -143,8 +146,8 @@ Prima di generare il thread avrò già mascherato i vari segnali, eseguendo \tex
 \subsection{Stampa delle statistiche}
 \begin{flushleft}
 
-La stampa delle statistiche, essendo richiamata direttamente dal signal handler, necessita di utilizzare funzioni \emph{async-signal-safe}: per questo motivo avevo pensato di utilizzare una write piuttosto che una printf per stampare le informazioni a schermo, tuttavia, dato che sarebbe risultato scomodo convertire alcune tipologie di dati in stringhe (così da stamparli con write), ho quindi cambiato approccio, facendo in modo di stampare le statistiche al di fuori dell'handler, dal quale invece verrà settato un flag nel caso di SIGUSR1, che verrà controllato nel loop del server e, nel caso sia settato a true, procederà con la stampa delle statistiche, che essendo fuori dall'handler potrà utilizzare printf senza problemi.
-Il calcolo delle statistiche viene effettuato mediante la funzione ricorsiva \texttt{ftw} (\emph{file-tree-walk}), funzione async-signal-safe e thread-safe.
+La stampa delle statistiche, essendo richiamata direttamente dal signal handler, necessita di utilizzare funzioni \emph{async-signal-safe}: per questo motivo avevo pensato di utilizzare una write piuttosto che una printf per stampare le informazioni a schermo, tuttavia, dato che sarebbe risultato scomodo convertire alcune tipologie di dati in stringhe (così da stamparli con write), ho quindi cambiato approccio, facendo in modo di stampare le statistiche al di fuori dell'handler, dal quale invece verrà settato un flag nel caso di SIGUSR1, il quale verrà controllato nel loop del server e, nel caso sia settato a true, procederà con la stampa delle statistiche (che essendo fuori dall'handler potrà utilizzare printf senza problemi).
+Il calcolo delle statistiche viene effettuato mediante la funzione ricorsiva \texttt{ftw} (\emph{file-tree-walk}).
 \\~\\
 Le seguenti informazioni vengono stampate: size totale dello store (in byte e MB), numero di oggetti, numero di sottocartelle all'interno della cartella \texttt{data} e numero di client attualmente connessi.  
 \end{flushleft}
@@ -153,7 +156,7 @@ Le seguenti informazioni vengono stampate: size totale dello store (in byte e MB
 
 \subsection{Parsing delle richieste}
 \begin{flushleft}
-Per quanto riguarda il parser: si occupa semplicemente, sfruttando il formato definito dal protocollo, di spezzettare la richiesta in più campi (tipo di operazione, nome dell'utente/dell'oggetto, lunghezza dell'eventuale dato inviato e newline). Il comportamento è abbastanza semplice per quanto riguarda la maggior parte delle richieste: di default leggo uno standard di 512 byte, che saranno sicuramente abbastanza per leggere fino al newline, dato che al caso più impegnativo oltre all'header di base e spazi (una decina di byte) dovrò leggere il nome utente (che avrà un massimo di 255 byte, limite dettato da UNIX stesso) e un certo numero di cifre numeriche che descrive la lunghezza.\\Un po' più interessanti da analizzare sono la STORE e la RETRIEVE (essenzialmente simmetriche nell'implementazione).\\~\\
+Per quanto riguarda il parser: si occupa semplicemente, sfruttando il formato definito dal protocollo, di spezzettare la richiesta in più campi (tipo di operazione, nome dell'utente/dell'oggetto, lunghezza dell'eventuale dato inviato e newline). Il comportamento è abbastanza semplice per quanto riguarda la maggior parte delle richieste: di default leggo uno standard di 512 byte, che saranno sicuramente abbastanza per leggere fino al newline, dato che al caso più impegnativo oltre all'header di base e spazi (una decina di byte) dovrò leggere il nome utente (che avrà un massimo di 255 byte, limite dettato da UNIX stesso) e un certo numero di cifre numeriche che descrive la lunghezza (che sicuramente entrerà nei restanti byte).\\Un po' più interessanti da analizzare sono la STORE e la RETRIEVE (essenzialmente simmetriche nell'implementazione).\\~\\
 
 La STORE calcola, in base alla dimensione di ciò che ha letto nell'header, se è necessaria una ulteriore read di \texttt{x} byte per concludere la lettura, dove x è dato dalla differenza tra la lunghezza dei dati e la quantità di dati già letti nella prima read. Se invece ha già letto tutti i dati con la prima read può procedere direttamente alla creazione dell'oggetto.
 \\~\\
@@ -169,7 +172,7 @@ Dalla traccia veniva detto che i nomi erano garantiti essere distinti tra i vari
 Ho scelto quindi di gestire il suddetto caso facendo in modo di registrare gli utenti in una struttura dati condivisa, così da poter verificare, prima di ogni registrazione, che l'utente non sia già connesso attraverso un altro client.\\
 
 Nel caso in cui sia già presente un utente collegato con quel nome, il secondo utente fallirà l'operazione di registrazione, restituendo \texttt{KO Multiple clients with the same username \textbackslash n}.\\~\\
-Inizialmente la struttura dati che avevo adoperato era una semplice \emph{linked list}, tuttavia in seguito ad alcuni test ed esperienze dirette ho deciso di passare ad una tabella hash, principalmente per questioni di velocità. 
+Inizialmente la struttura dati che avevo adoperato era una semplice linked list, tuttavia in seguito ad alcuni test ed esperienze dirette ho deciso di passare ad una tabella hash, principalmente per questioni di velocità. 
 \\~\\
 Dato che la tabella hash è condivisa, ho piazzato una mutex per ogni cella della tabella (quindi una per ogni linked list).
 La tabella hash gestisce essenzialmente delle stringhe (i nomi degli utenti).\\ Dopo una ricerca relativa a delle funzioni hash operanti su stringhe, ho pensato di scegliere la funzione hash \textbf{djb2} di Dan Bernstein (\url{http://www.cse.yorku.ca/~oz/hash.html}), che si è distinta tra le altre candidate per le ottime performance registrate.
@@ -183,12 +186,12 @@ La tabella hash gestisce essenzialmente delle stringhe (i nomi degli utenti).\\ 
 \begin{flushleft}
 
 \subsection{Esecuzione dei test}
-Per eseguire i test sarà prima necessario, dopo aver compilato con il comando \texttt{make all}, aver avviato il server (avviandolo normalmente da shell con \texttt{./server} o eseguendo \texttt{make dserver} qualora si voglia avviarlo con valgrind e relativi flags).\\
+Per eseguire i test sarà prima necessario, dopo aver compilato con il comando \texttt{make} o \texttt{make all}, aver avviato il server (avviandolo normalmente da shell con \texttt{./server} o eseguendo \texttt{make dserver} qualora si voglia avviarlo con valgrind e relativi flags).\\
 Avviato il server, basterà dare il comando \texttt{make test} per eseguire i test e vederne i risultati.\\~\\
 
 \subsection{Test supplementare}
 Oltre ai test base, per assicurarmi del corretto funzionamento durante lo sviluppo, ho voluto testare il comportamento nel caso in cui i client andavano a inviare dati binari di diverse tipologie, magari di uso quotidiano, come immagini e file pdf. In questo micro-test, ci sono quattro utenti che vanno a caricare quattro tipologie di file (due immagini, un pdf e una gif animata) e richiedono lo storing dei suddetti oggetti tramite libreria. I file originali sono presenti nella directory \texttt{testFiles}: al termine di questo test (eseguibile tramite il comando \texttt{make test2}) se il tutto è andato a buon fine sarà possibile verificare manualmente la presenza dei vari file all'interno dei determinati spazi utente nella directory \texttt{data}.\\~\\
-È possibile provare ad aggiungere ulteriori tipologie di file nella cartella testFiles, per poi avviare da shell il client digitando qualcosa del tipo:\\ \texttt{./client "nome\_utente" 4 "./testFiles/nome\_file" "nome\_oggetto"}.
+È possibile provare ad aggiungere ulteriori tipologie di file nella cartella testFiles, per poi avviare da shell il client digitando una cosa del tipo:\\ \texttt{./client "nome\_utente" 4 "./testFiles/nome\_file" "nome\_oggetto"}.
 
 \subsection{Ulteriori info}
 Il progetto è stato testato sui seguenti OS:
