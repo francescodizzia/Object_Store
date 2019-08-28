@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -std=c99 -D_POSIX_C_SOURCE=200809L -g -Wall -pedantic -L. -I. #-fsanitize=address
 SOCKNAME = objstore.sock
-VALGRIND_FLAGS = --leak-check=full --show-leak-kinds=all #-v
+VALGRIND_FLAGS = --leak-check=full --show-leak-kinds=all --track-origins=yes #-v
 
 default_target: all
 
@@ -35,5 +35,5 @@ libobjstore.a: lib.o common.o
 clean:
 	$(RM) ./*.o ./*.out ./server ./client ./$(SOCKNAME) ./testout.log ./libobjstore.a ./testout.log
 	$(RM) -r ./data/* ./data
-	
+
 .PHONY: clean dserver all

@@ -32,6 +32,11 @@
 //a false avvia la terminazione 'gentile' dell'Object Store e dei vari thread
 volatile sig_atomic_t running = true;
 
+//Flag che si occupa della stampa delle statistiche: viene settato a TRUE
+//dal signal handler thread nel caso in cui venga ricevuto un segnale di
+//tipo SIGUSR1
+volatile sig_atomic_t print_stats = false;
+
 //Variabile che rappresenta il numero di client attualmente connessi al server
 volatile sig_atomic_t n_clients = 0;
 
@@ -83,29 +88,25 @@ void resetStats(){
 
 //Si occupa della stampa delle statistiche
 void printStats(){
+  //Resetto le statistiche
+  resetStats();
+
   //Esegue la file-tree-walk sulla directory 'data', con il criterio specificato nella funzione
   //setStats, vista sopra
   int k = ftw("./data/", setStats, 0);
 
-  //In caso di errore, resetto le statistiche ed esco senza stampare nulla
-  if(k == -1){resetStats();return;}
+  //In caso di errore esco senza stampare nulla
+  if(k == -1)return;
 
   //Converto il numero di total_size (che è in byte) in MB
   float size_in_MB = ((float)total_size)/ONE_MB;
 
-  //Alloco e inizializzo la stringa che stamperà le varie informazioni
-  char string[512];
-  memset(string, '\0',512);
-
   //Dato che andrò ad accedere sulla variabile condivisa n_clients, acquisisco il lock
   //relativo alla sezione critica prima
   pthread_mutex_lock(&client_mtx);
-    //Formatto la stringa secondo le varie informazioni
-    sprintf(string,"\n**************************************************\nSize totale degli oggetti: %lu byte (%.2f MB)\nNumero di oggetti: %lu\nCartelle: %lu\nClient connessi: %d\n**************************************************\n",total_size, size_in_MB, objects,folders,n_clients);
-    //Stampo a schermo la stringa, usando una write anziché una printf per questioni di signal safety
-    write(1,string,strlen(string));
-    //Resetto le statistiche, pronte per una nuova stampa
-    resetStats();
+    //Stampo le statistiche a schermo
+    printf("\n**************************************************\nSize totale degli oggetti: %lu byte (%.2f MB)\nNumero di oggetti: %lu\nCartelle: %lu\nClient connessi: %d\n**************************************************\n",total_size, size_in_MB, objects,folders,n_clients);
+
   //Rilascio il lock
   pthread_mutex_unlock(&client_mtx);
 }
@@ -151,9 +152,10 @@ void* signal_handler(void* ptr){
         //Aspetto il segnale, una volta arrivato lo salvo nella variabile 'signal'
         sigwait(&set, &signal);
 
-        //Se il segnale è di tipo SIGUSR1, procedo con la stampa delle statistiche
+        //Se il segnale è di tipo SIGUSR1, imposto a TRUE il flag necessario alla
+        //stampa delle statistiche
         if(signal == SIGUSR1)
-          printStats();
+          print_stats = true;
         //Ogni altro tipo di segnale (che non sia SIGPIPE, che quindi viene ignorato)
         //setta la variabile running a FALSE, procedendo quindi alla terminazione 'gentile'
         //del server, dei thread worker e dello stesso thread dei segnali
@@ -264,6 +266,12 @@ int main(){
 
     //Chiamo la select con timer
     select_ret = select(server_fd+1, &r_fds, NULL, NULL, &timer);
+
+    //Controllo il flag delle statistiche e nel caso procedo con la stampa
+    if(print_stats){
+      print_stats = false;
+      printStats();
+    }
 
     //Fallimento nella select: esco dal ciclo
     if(select_ret == -1)
