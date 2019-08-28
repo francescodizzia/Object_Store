@@ -7,3 +7,7 @@ FILE_PATH="./testFiles"
 ./client "pluto" 4 "${FILE_PATH}/testoprogetto2019.pdf" "consegna.pdf" &
 
 wait
+
+PID="$(ps aux | grep ./server | grep -v grep | awk '{print $2}')"
+
+kill -SIGUSR1 ${PID}

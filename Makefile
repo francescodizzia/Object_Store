@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -std=c99 -D_POSIX_C_SOURCE=200809L -g -Wall -pedantic -L. -I. #-fsanitize=address
 SOCKNAME = objstore.sock
-VALGRIND_FLAGS = --leak-check=full --show-leak-kinds=all --track-origins=yes #-v
+VALGRIND_FLAGS = --leak-check=full --show-leak-kinds=all #--track-origins=yes #-v
 
 default_target: all
 
@@ -14,7 +14,7 @@ test: server client
 	./test_base.sh
 	./testsum.sh
 
-test2:
+test2: server client
 	./test_files.sh
 
 dserver: server
